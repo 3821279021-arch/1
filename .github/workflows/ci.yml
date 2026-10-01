@@ -1,4 +1,4 @@
-name: V3 regression
+name: V3.1 regression
 on: [push, pull_request]
 jobs:
   verify:
@@ -14,13 +14,27 @@ jobs:
           node-version: '22'
       - run: pip install -r requirements-dev.txt
       - run: python -m compileall -q app tests
+      - run: ruff check app tests tools
+      - run: ruff format --check app tests tools
+      - run: mypy
       - name: JavaScript syntax
         run: |
           for file in app/static/app.js app/static/js/*.js; do
             node --input-type=module --check < "$file"
           done
           node --check app/static/sw.js
-      - run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Unit tests with coverage
+        run: |
+          coverage run -m unittest discover -s tests -p 'test_*.py' -v
+          coverage report
+          coverage xml
+          coverage html
+      - name: Dependency audit
+        run: pip-audit -r requirements.txt --format json --output test-artifacts/dependency-audit.json
+      - name: Deterministic arena smoke (offline)
+        run: |
+          python -m tools.arena.smoke
+          python -m tools.arena run --config experiments/mock.json --games 2 --output test-artifacts/arena --experiment-id browser-fixture
       - run: python -m playwright install --with-deps chromium
       - name: Browser and server smoke
         env:
@@ -34,6 +48,7 @@ jobs:
           trap 'kill "$server_pid"' EXIT
           python tests/wait_for_server.py
           python tests/browser_v3.py
+          python tests/browser_v31.py
       - name: Docker build and import smoke
         run: |
           docker build -t ai-werewolf-ci .

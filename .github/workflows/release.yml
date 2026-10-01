@@ -1,0 +1,31 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - name: Version and license gate
+        run: python scripts/build_delivery.py --verify-release "$GITHUB_REF_NAME"
+      - run: ruff check app tests tools && ruff format --check app tests tools && mypy
+      - run: coverage run -m unittest discover -s tests -p 'test_*.py' && coverage xml
+      - run: python -m tools.arena.smoke
+      - run: docker build -t ai-werewolf-release . && docker run --rm ai-werewolf-release python tests/container_smoke.py
+      - run: python scripts/build_delivery.py --output dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-validation
+          path: test-artifacts/
+      - name: Publish tagged release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --title "AI Werewolf $GITHUB_REF_NAME" --notes-file CHANGELOG.md
