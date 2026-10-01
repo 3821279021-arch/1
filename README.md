@@ -1,158 +1,114 @@
-# 月下狼人杀 V2.3.1
+# 月下狼人杀 · AI 社交推理竞技场 V3
 
-在原 FastAPI 手机网页项目上升级的 **真人 + AI 玩家 + 私人 AI 搭档** 实时狼人杀平台。保留原来的 6 人规则、四家模型路由、Docker、Render 和 PWA。无需 API Key 可以完整游玩。
+基于 V2.3.1 重构的多人狼人杀应用。真人可与不同 AI 同桌，通过发言、投票、技能与赛后回放比较模型的社交推理表现。
 
-## 启动
+V3 实现了左右固定玩家头像、中央实时舞台、6/9/12 人和 4～16 人自定义板子、随机入座、完成动作立即推进、本地提示音与独立朗读、用户自带 API（BYOK）、动态模型目录及赛后统计。
 
-推荐 Python 3.12（本版本的依赖锁定与 CI 环境）。
+## 运行
+
+需要 Python 3.12 或更新版本。解压后进入 `ai-werewolf` 目录：
 
 ```bash
 python -m venv .venv
 # macOS / Linux
 source .venv/bin/activate
-# Windows PowerShell：.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+# Windows PowerShell 使用 .venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 python run.py
 ```
 
-打开 http://127.0.0.1:8000 。同一 Wi-Fi 的手机打开电脑的局域网 IP 加 `:8000`。服务监听 `0.0.0.0`。
+打开 http://localhost:8000 。也可双击 `scripts/start.bat`，或在 macOS/Linux 执行 `bash scripts/start.sh`；脚本会创建虚拟环境、安装依赖并启动。首次安装需要网络。
 
-1. 选择名字、座位和速度，创建房间。
-2. 复制邀请链接给朋友；朋友在开始前选择空座或 AI 座位加入。每个浏览器拥有独立凭证和私人搭档。
-3. 房主可配置空座位的模型、性格；点击开始，未入座位置自动由 AI 补齐。
-4. 等待自己的回合，提交技能、发言或投票；可以提前结束发言。
-5. 其他人发言时打开「🐾 AI 搭档」私聊。代打按钮只授权下一次动作；托管持续接管，收回控制权立即取消尚未提交的 AI 操作。
+没有 API Key 也能使用 **Mock 练习**完整游玩。Mock 是模拟程序，不能用于证明真实模型的推理能力。服务器默认只运行一个 worker，SQLite 与房间调度不支持多个实例共享同一个数据库。
 
-即使关闭所有浏览器，服务器也继续处理计时和 AI 回合。刷新或断线重连恢复当前阶段与原 deadline。浏览器凭证保存在 localStorage。首次创建会话会显示恢复码，请保存；清缓存或换设备后，在「身份恢复与会话」输入恢复码即可恢复所有原座位。使用后恢复码和 Token 都会更新，旧设备立即断开。邀请链接只含房间号。
-
-## V2.3 改进
-
-- Token：OpenAI 使用 tiktoken；Qwen 使用随包提供的本地词表，无需运行时下载；其余 Provider 使用经验系数。按实际 Usage 校准并保留 15% 余量，统一预算入口。
-- 记忆：每种历史集合有上限；保留有来源的角色/查验/票型/自身选择摘要，进入新一天生成结构化每日摘要，旧怀疑按天衰减。
-- AI：新增 `GameBeliefState`。默认服务器策略决定动作，模型表达性格；模型不可用时继续使用相同策略。可通过 `AI_STRATEGY_MODE=model` 允许模型在合法范围内选择。
-- 模型：复用 HTTP 连接，统一 Adapter/Result/Usage；OpenAI、Claude、Gemini 使用原生 schema/tool 约束，DashScope 使用 JSON 模式和相同本地动作验证；默认有一次修复重试。
-- 多人：开局前房主可锁房、设置密码、踢人和重新允许入座；恢复码、Token 轮换/撤销、房间与会话限流、重连权威快照。
-- 存储：事件、玩家记忆和模型成本记录有独立表；异步路径把 SQLite 写入移到线程，原子保存快照与语义事件；归档保留期后真正清理私有数据。
-- 前端：ES Modules、统一客户端 store、独立 WebSocket transport；加入 CSP、nosniff、Referrer-Policy、Permissions-Policy。
-- 工程：关键依赖和传递依赖锁定，新增 GitHub Actions 的规则/安全/长局/浏览器/语法/Docker 检查。
-
-房主管理入口在大厅「房主 · 入座管理」；密码加入入口在首页「身份恢复与会话」。结束后房主可下载本局模型成本报告，费用记录支持服务重启后读取。尚未结束的对局（包括提前关闭）仅提供预算总数，详细调用时机不会泄露角色。
-
-升级及验收说明：[docs/CHANGELOG-V2.3.md](docs/CHANGELOG-V2.3.md)、[docs/VALIDATION-V2.3.md](docs/VALIDATION-V2.3.md)。
-
-V2.3.1 使用用户授权的 DashScope Key 完成 5 局真实对局及修复回归，176 次对局/搭档请求全部成功。真实 Usage 验证的预算估算误差中位数约 15%（包含 15% 安全余量）；122 项自动测试、三套浏览器及 Docker smoke 通过。问题与分批记录见 [真实实测报告](docs/LIVE-PLAYTEST-V2.3.1.md)；其中最终公开发言保护补跑 1 局，其他批次用于定位问题。
-
-## 保留的 V2.2 功能
-
-- 独立 room_id/game_id、多人混合房、AI 座位预设；真人优先入座，开始时再补 AI。
-- 带 state_revision、turn_id、event_id 的实时增量消息；流式期间不整局写库或广播快照，完成后保存，重连去重。
-- action_id 幂等、过期动作/AI 丢弃；服务端过滤死亡狼人后续频道，保留其生前历史。
-- Rule Engine 统一验证角色、阶段、存活、轮次、目标、药剂与重复动作；所有 AI 操作经过相同验证。
-- InformationScope 先过滤数据，再提供给浏览器、AI 玩家和宠物。公开、狼队、私人搭档三个频道在服务端隔离；游戏结束才公开身份。
-- 服务器时钟、逐玩家独立发言、AI 原生 SSE 发言转 WebSocket chunks、自然停顿、统一限时投票。
-- 玩家投票阶段只公布提交状态，结束后统一公布目标、弃票和平票结果。
-- 宠物副驾、商议、单次代打、托管；6 种性格和可调表达参数进入模型上下文，也影响 Mock 发言。
-- 记忆区分公开事实、私人已确认信息与猜测，保存发言、票型、怀疑度、待验证身份推测、立场变化和既往选择。
-- SQLite 保存房间、原 deadline、聊天、宠物、身份凭证哈希；预留长期偏好/统计数据表和 API。当前长期功能保存建议长度和策略偏好，未实现成长统计或竞技等级。
-- 精确到实际 model ID 的模型池；每座位独立 Agent，严格模式分配独立真实模型，显式兼容模式才允许复用。
-- 首选模型重试、其他真实模型自动切换、最终 Mock 回退；实际模型/回退状态可见。流式中断保留已输出文字。
-- Session、建房、搭档和房间 AI 限流；单局请求/token预算、全局每日预算和并发活跃房间上限。计费尝试与预留额度持久化。
-- 夜间狼人按顺序两轮回应队友，最终夜杀单独验证；事件增量记忆保存早期身份声称、票型与自己立场。
-- 房间按需加载、闲置卸载、归档、关闭及再来一局；新局重新分身份并清空私有状态。
-- 手机圆桌、夜间主题、按天分组历史、私人搭档抽屉、安全区域和 PWA 静态缓存。
-- 用户点击开启中文公开 AI 发言语音，各座位不同声音参数；停止/静音、切回合清理，搭档朗读另行开启。
-- 本人回合提醒、可选震动、保持亮屏、安装引导及断网/同步状态。
-
-## 房间规则
-
-固定 2 狼人 + 预言家 + 女巫 + 2 村民。好人消灭所有狼人获胜；狼人数量达到好人数量获胜。40 天仍未结束判平局。
-
-标准速度：狼队讨论 30 秒，夜杀/查验/女巫各 15 秒，发言 30 秒，遗言 20 秒，投票 15 秒。快速发言 15 秒，慢速 60 秒。AI 发言完成后默认停顿 1.5 秒，不强制等满上限。
-
-夜间角色阶段固定计时，避免通过动作完成速度泄露角色。狼人最终选择需要**存活狼人的严格多数**，没有多数不击杀。投票最高票平票或全部弃票时无人出局。夜杀、查验、投票可明确选择弃权。技能超时默认不使用；女巫未用解药时可见夜杀目标，解药用完后不再收到该信息。允许女巫自救及同夜使用两药，禁止自毒。夜间死亡与放逐玩家均有遗言；胜负已达成则立即结束。出局者可以观战和私人聊天，不能投票或使用技能。
-
-## 真正的模型
-
-复制 `.env.example` 为 `.env`，只填写服务器环境变量中的 API Key。前端不会收到 Key。模型名可按你的账号设置；默认 OpenAI `gpt-4.1-mini`、Claude `claude-sonnet-4-20250514`、Gemini `gemini-2.5-flash`、DashScope `qwen-plus`。房主在开始前选择 AI 座位模型；宠物在偏好面板选择自己的模型。
-
-OpenAI Responses、Claude Messages、Gemini streamGenerateContent、DashScope Chat Completions 均接入原生 SSE，过滤推理块。公开发言按完整句子校验后发送；预言家的真实查验由服务器准确展示，模型接续表达观点。未配置模型在大厅不可选；显式 Mock 可离线练习。真实模型先尝试其他健康真实模型，全部不可用或预算耗尽才转 Mock；超过服务器 deadline 的响应会被丢弃。DashScope 在线实测见 `docs/LIVE-PLAYTEST-V2.3.1.md`；其余三家仅完成协议模拟测试。
-
-默认并发上限 4，可用 `LLM_CONCURRENCY` 调整。`LLM_TIMEOUT` 控制单次模型超时；`.env.example` 推荐 12 秒。每次真实 HTTP 尝试（包括重试和后备模型）先预留请求、token 及可配置价格的费用额度，再按可获得的 usage 结算。缺少 usage 时保守记账。预算属于本服务，不代表云厂商账户的全部消费；费用估算需配置正确价格。完整配置见 [MODELS-AND-LIMITS.md](docs/MODELS-AND-LIMITS.md)。
-
-DashScope 配置：在服务器 `.env` 中填写 `DASHSCOPE_API_KEY`，`DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1`，`DASHSCOPE_MODEL=qwen-plus`。房主在 AI 座位设置选择 Qwen，宠物在模型选项中选择 Qwen。默认座位仍为 Mock。真实模型自动分配需要注册实际模型池，例如 `DASHSCOPE_MODELS=qwen-plus,qwen-turbo,qwen-max,qwen-flash,qwen3-max`。这些 ID 已在本次账号实测成功，其他账号须核对可用性。严格模式五个 AI 需要五个不同真实模型；不足会提示并阻止开局。可明确取消「独立模型」进入兼容复用模式，共用座位会显示警告。
-
-## 数据与部署
-
-本地默认数据库：`data/werewolf.sqlite3`，可通过 `DATABASE_PATH` 修改。备份时包括 SQLite WAL，或在服务停止后复制数据库。不要把数据库、浏览器凭证或 `.env` 打进公开代码包。
-
-**当前必须运行一个 uvicorn worker / 一个服务实例。**启动锁阻止两个时钟同时写同一个 SQLite。若需要横向扩容，需要迁移数据库并增加分布式房间锁和发布订阅；存储与房间管理已有独立边界，但本版本未接入 PostgreSQL/Redis。
-
-Docker：
+容器运行：
 
 ```bash
-docker build -t ai-werewolf-v2 .
-docker run --rm -p 8000:8000 -v werewolf-data:/app/data ai-werewolf-v2
+docker build -t ai-werewolf-v3 .
+docker run --rm -p 8000:8000 -v werewolf-data:/app/data ai-werewolf-v3
 ```
 
-加入服务器 Key 可使用 `--env-file .env`。持久卷保证重新创建容器后恢复数据。
+Docker Hub 限流时，可加 `--build-arg PYTHON_IMAGE=public.ecr.aws/docker/library/python:3.12-slim` 使用公开镜像源。
 
-Render：仓库已带 `render.yaml`，连接 Blueprint 即可。**配置使用 Starter 服务和 1GB 持久盘，会产生 Render 费用**；这样服务重启/重新部署才保留对局。免费服务文件系统临时，若改为免费试玩，数据库不保证跨部署保存。此交付未替你创建或部署任何收费服务。
+`data/` 保存会话、房间、回放、预算以及加密凭据。容器重建时保留该目录。对外提供 BYOK 服务时使用 HTTPS 反向代理。
 
-手机公网访问需要部署后的 HTTPS 地址；HTTPS 支持添加到主屏幕。Service Worker 只缓存静态资源，始终不缓存鉴权 API 或私人状态。离线页面会提示断线，服务器时钟继续运行。
+## 开始一局
 
-## 测试
+1. 填昵称并选择 6 人极速、9 人标准、12 人标准或自定义板子，创建房间后自动随机入座。
+2. 分享房间号。朋友加入时随机分配空座；大厅设置中可主动换座。
+3. 房主分配 AI 模型。空位可使用 Mock、部署者的平台模型，或自己的 BYOK 模型。
+4. 开始后身份只对本人可见。中央显示当前阶段、最多剩余时间、正在发言的玩家及对话。合法操作在舞台底部。
+5. 发言结束、所有狼人结束讨论或提交刀人、技能提交、所有有投票权者提交后立即推进；无行动角色的阶段自动跳过。倒计时是最长等待时间。
+6. 结束后查看身份、各模型表现、投票与技能记录、token、延迟、错误和回退；可回放公共事件并在重赛后查看旧局。
+
+真人可在私有搭档中咨询或开启自动托管。搭档使用本人的合法视角；它的建议也由模型生成。
+
+## 模型与 API
+
+进入右上角「模型与 API」：选择 OpenAI、Anthropic、Gemini、DashScope 或 OpenAI-compatible，填写自己的 Key。兼容平台还需填写公共 HTTPS Base URL，例如 `https://example.com/v1`。点击测试或刷新目录后，可以从账号模型列表选择，也可以手动输入模型 ID。
+
+在大厅逐个 AI 座位绑定凭据和模型 ID。开启独立模型模式时，真实 AI 座位必须使用不同模型；比较同模型不同参数时可关闭此限制。配置 `model_options` 可按座位传递 `temperature` 或供应商支持的推理参数。
+
+供应商的模型列表接口与推理权限可能不同；目录不可用时允许手动 model ID，并可通过 API 传入 model ID 做最小连接测试。实际模型可用性和费用取决于用户账号及上游 API。
+
+两种 BYOK 保存方式：
+
+- 持久凭据：Fernet 加密后保存在独立 SQLite 凭据库，前端只见掩码。
+- 临时凭据：仅在服务内存中保存，可绑定会话或房间，服务重启后消失。
+
+可以测试、替换和删除 Key。删除或替换会中止旧凭据的进行中任务；模型连接或非法输出失败会明确标记回退，不会借用另一人的 Key 或站长 Key。凭据不进入 Prompt、WebSocket 或模型遥测。校验错误也不回显输入内容。
+
+部署者仍可在 `.env` 配置平台 Key；参考 `.env.example`。`AI_STRATEGY_MODE` 已废弃，V3 不使用服务器指定的策略目标或表达计划。
+
+## 角色与规则
+
+| 板子 | 角色 |
+| --- | --- |
+| 6 人极速 | 2 狼人、预言家、女巫、2 村民 |
+| 9 人标准 | 3 狼人、预言家、女巫、猎人、3 村民 |
+| 12 人标准 | 4 狼人、预言家、女巫、猎人、守卫、4 村民 |
+| 自定义 | 4～16 人，按角色数量配置，狼人数须少于好人数 |
+
+角色池包括村民、狼人、预言家、女巫、猎人、守卫、骑士、白痴、狼王、白狼王、狼美人、隐狼。角色定义、合法目标、技能效果、死亡触发与规则说明集中于 `app/roles.py`，方便扩展。
+
+本项目采用已在界面与 Prompt 告知的规则变体：同夜女巫不能同时救毒；守护与解药同目标仍存活；毒杀/殉情不触发枪；刀人须严格多数一致，平票不刀；投票最高票平票无人出局；隐狼在普通刀狼全部死亡后觉醒；狼人达到好人数时狼队获胜。连续 40 天仍未决出胜负则平局。
+
+## AI 自主性与公平
+
+模型只获得本人的身份和合法私有信息、公共发言与事件、完整本局规则、当前动作和合法目标。平台不预先替模型指定怀疑、投票、刀人或发言立场。模型可以诈身份、撒谎、施压、保持谨慎或改变判断；这些都是待观察的能力。
+
+服务器负责信息隔离、合法性验证、限流、超时与 API 故障。非法结构允许重试；最终错误使用中性跳过并记录回退。历史记忆用于保留合法事实与原始发言，不把服务器推断的概率作为模型决策计划。
+
+赛后统计展示可核对的数据；投票命中、胜负等单局结果并不等同于通用能力排行榜。费用按配置的单价估算；上游缺失 usage 时输入 token 用估算值，缺失输出 usage 不编造实际值。
+
+## 声音
+
+在设置中点击「启用声音」，会立即尝试播放本地测试音并解锁音频。提示音与 AI 朗读有独立开关，朗读可调语速。提示音覆盖开始/结束发言、轮到自己、投票、天黑、天亮和结束。浏览器拒绝播放或没有可用朗读引擎时，页面会显示原因。
+
+手机浏览器要求先点击解锁，设备静音、系统音量和后台限制仍会影响听音。重新回到前台后可再次播放测试音。TTS 使用浏览器系统语音，不另行发送文本到语音服务。
+
+## 数据、安全与备份
+
+默认数据库为 `data/werewolf.sqlite3`。BYOK 数据库为同路径加 `.credentials.sqlite3`，未设置 `CREDENTIAL_ENCRYPTION_KEY` 时首次自动生成旁边的 `.key` 文件（权限 600）。**同时备份数据库与加密密钥**；更换密钥前需迁移或重新添加凭据。勿提交 `.env`、`data/` 和密钥文件到代码仓库。
+
+会话恢复码是身份凭证，请妥善保管。WebSocket 在首帧认证，不在 URL 传 token。正在对局不会公开其他人身份、技能行动者或明细成本。详细回放与赛后身份仅向参与者开放。归档与过期清理会同步清除对局、回放、记忆与遥测，保留期可通过 `.env.example` 调整。
+
+自定义 API 地址仅接受公共 HTTPS，拒绝私网、凭据 URL 和重定向。模型接口错误只返回安全摘要。
+
+## 验证与项目结构
 
 ```bash
-python -m unittest discover -s tests -v
-node --check app/static/app.js
+python -m pip install -r requirements-dev.txt
+python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-可选浏览器验收：
+V3 新验收覆盖规则、AI 自主性、凭据隔离、动态目录、多人 HTTP 动作及完整 Mock 对局。浏览器验收脚本为 `tests/browser_v3.py`，需正在运行的服务与 Playwright/Chromium；详见 `docs/V3-ACCEPTANCE.md`。
 
-```bash
-pip install -r requirements-dev.txt
-python -m playwright install chromium
-# 终端一：加速验收服务（不要在正式游玩中设置这些变量）
-GAME_TIME_SCALE=0.2 AI_TURN_PAUSE=0.2 python run.py
-# 终端二
-python tests/browser_smoke.py
-# 浏览器实时事件、声音路由、弱网和重复操作专项（API/WS使用隔离模拟）
-python tests/browser_v21.py
-```
+- `app/roles.py`、`game.py`、`rules.py`：配置板子、角色、权威状态机。
+- `app/scope.py`、`ai.py`、`memory.py`：统一合法视角与自主模型调用。
+- `app/credentials.py`、`providers.py`、`llm.py`：加密 BYOK、模型发现、调用与遥测。
+- `app/rooms.py`、`main.py`、`persistence.py`：房间调度、API、持久化和赛后回放。
+- `app/static/`：中央舞台、模型中心、音频资源与 PWA。
+- `docs/v3-requirements/`：原始 V3 需求；旧版本文档保留历史说明。
 
-Windows 可使用 PowerShell `$env:GAME_TIME_SCALE="0.2"` 等环境变量设置方式。浏览器脚本检查 360/390/768/1280 宽度、两个浏览器加入、宠物私聊、托管、刷新保留 deadline、完整 Mock 对局和 JavaScript 错误；截图写入 `test-artifacts/`。完整对局自动化测试也用缩短的时间比例，正式默认值仍为真实秒数。
-
-## 项目分层
-
-```text
-app/game.py          每房间可序列化状态、玩家、宠物和性格
-app/rules.py         权威规则、阶段和命令验证
-app/scope.py         唯一信息权限边界
-app/rooms.py         房间锁、服务端时钟、AI 调度和私密广播
-app/persistence.py   SQLite 和长期记忆接口
-app/runtime_lock.py  跨平台单进程锁
-app/ai.py            仅接收 PlayerView 的模型/宠物编排
-app/memory.py        有界事件记忆、跨天摘要与私有来源
-app/strategy.py      结构化信念和可解释服务器策略
-app/tokens.py        统一 Token 估算
-app/providers.py     Provider Adapter 与动作 schema
-app/model_registry.py 精确模型池、可用性、严格分配
-app/limits.py        限流、并发预算预留和持久化记账
-app/llm.py           真实模型切换、原生流式输出与安全审计
-app/main.py          FastAPI HTTP / WebSocket
-app/static/          手机网页与 PWA
-```
-
-主要 API：`POST /api/session` 创建设备凭证；其余房间接口使用 `Authorization: Bearer <token>`。`GET/POST /api/rooms`；`POST /api/rooms/{id}/join|start|configure|action|wolf-chat|leave|close|rematch`；`PATCH /api/rooms/{id}/pet`；`POST /api/rooms/{id}/pet/chat`；`GET/PUT /api/pet/memory`。WebSocket `/ws/{id}` 在第一帧接收 `{ "token": "..." }`，可带可选 `last_event_id`；成功后发送合法 `state_snapshot`，随后推送带生成时版本号的增量事件。用户动作携带 UUID `action_id`、`expected_state_revision` 和 `turn_id`，重试保留同一 UUID。旧版无 UUID 请求暂兼容，但不获得动作重放确认。鉴权 token 不放入 URL。V2.3 新增恢复/轮换/撤销、房主管理和成本报告，详见 [API 增量](docs/V23-TRACEABILITY.md)。
-
-V1 的浏览器驱动 `step` 接口已由服务器调度器替代，不支持旧版前端直接调用；旧「主持人视角」接口返回 403，避免在对局中泄露身份。
-
-## 主动实测（会调用真实 API）
-
-`PYTHONPATH=. LIVE_GAMES=2 python tests/live_dashscope.py` 使用服务器 `.env` 的 DashScope Key，注册上述五个模型，并行跑两局严格独立模型对局，检查真实后备接手、信息边界和私人搭档聊天。它不会被普通 unittest 自动运行；达到 250 个模型请求阈值会停止，单批时限八分钟。原始实测输出在 `test-artifacts/live-dashscope.json`，其中没有 API Key。
-
-`PYTHONPATH=. python tests/live_v23_checks.py` 用真实接口检查第 1/5/15/30 天合成历史、复杂记忆预算及预言家查验发言。默认仅测 qwen-plus/qwen-turbo/qwen-flash，产生 18 次请求；报告位于 `test-artifacts/v231-live-targeted.json`。Key 可通过环境变量或本地 `.env` 提供，交付包不包含测试密钥。
-
-房间默认五分钟无连接且非进行中则卸载内存；无连接大厅六小时、已结束房间十四天后归档，会话三十天过期。关闭房间保留可授权读取的历史；结束后「再来一局」回到大厅，保留真人席位与 AI 配置，重新生成游戏 ID、身份、Agent 与局内记忆。
-
-本次需求原文和验收映射见 `docs/v21-requirements/`、`docs/VALIDATION.md`。Web Speech API 已做浏览器队列与权限测试，实际手机是否有中文声音取决于设备和浏览器，需要在手机上点击开启后试听。
+本次验证记录及未实测项目见 `docs/V3-ACCEPTANCE.md`，需求映射见 `docs/V3-TRACEABILITY.md`。

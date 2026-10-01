@@ -14,13 +14,15 @@ import re
 from typing import Any
 
 SCHEMA_VERSION = 1
-ROLE_WORDS = {"预言家": "seer", "女巫": "witch", "村民": "villager", "狼人": "wolf"}
+ROLE_WORDS = {"预言家": "seer", "女巫": "witch", "村民": "villager", "狼人": "wolf",
+              "猎人": "hunter", "守卫": "guard", "骑士": "knight", "白痴": "idiot",
+              "狼王": "wolf_king", "白狼王": "white_wolf_king", "狼美人": "wolf_beauty", "隐狼": "hidden_wolf"}
 IGNORED_EVENTS = {"speech_chunk", "speech_started", "speech_finished", "timer_sync",
                   "turn_started", "turn_finished", "phase_changed", "vote_started",
                   "vote_submitted", "vote_result", "private_pet_message"}
 
 MEMORY_LIMITS = {"facts": 36, "claims": 12, "check_claims": 12, "stances": 12,
-                 "beliefs": 6, "contradictions": 12, "vote_history": 18,
+                 "beliefs": 24, "contradictions": 12, "vote_history": 18,
                  "received_votes": 18, "self_history": 18, "judgments": 10,
                  "conjectures": 6, "speeches": 12, "recent_events": 12,
                  "processed_event_ids": 512, "daily_summaries": 3}
@@ -183,8 +185,8 @@ def _quoted_claim(text: str, start: int) -> bool:
     prefix = re.split(r"[。；！？\n]", text[:start])[-1]
     # Repeating or questioning another player's report is not a new claim by
     # this speaker. The complete utterance remains in the public event layer.
-    reported = re.search(r"[1-6]号(?:曾|刚才|之前|上轮|今天|昨夜)?(?:自称|声称|说|称|报|提到|表示)", prefix)
-    subject = re.fullmatch(r"\s*(?:昨天|昨晚|昨夜|今天|此前|上轮|请|追问|询问|问)?[1-6]号[，,：:]?\s*", prefix)
+    reported = re.search(r"[1-9][0-9]?号(?:曾|刚才|之前|上轮|今天|昨夜)?(?:自称|声称|说|称|报|提到|表示)", prefix)
+    subject = re.fullmatch(r"\s*(?:昨天|昨晚|昨夜|今天|此前|上轮|请|追问|询问|问)?[1-9][0-9]?号[，,：:]?\s*", prefix)
     return bool(reported or subject)
 
 
@@ -198,18 +200,18 @@ def _speech(memory: dict[str, Any], text: str, pid: int | None, self_pid: int, d
     if pid == self_pid:
         memory["self_history"].append({**entry, "type": "speech"})
     hints = memory.setdefault("semantic_hints", [])
-    for match in re.finditer(r"([1-6])号?(?:怎么看都不太对|大概率(?:进狼坑|是狼)|进狼坑|像狼)", text):
+    for match in re.finditer(r"([1-9][0-9]?)号?(?:怎么看都不太对|大概率(?:进狼坑|是狼)|进狼坑|像狼)", text):
         hints.append({"event_id": event_id, "day": day, "source_player_id": pid,
                       "targets": [int(match.group(1))], "relation": "suspect",
                       "confidence": 0.25, "confirmed": False, "visibility": visibility})
-    for match in re.finditer(r"([1-6])[、，,]([1-6])(?:号)?至少出一狼", text):
+    for match in re.finditer(r"([1-9][0-9]?)[、，,]([1-9][0-9]?)(?:号)?至少出一狼", text):
         hints.append({"event_id": event_id, "day": day, "source_player_id": pid,
                       "targets": [int(match.group(1)), int(match.group(2))],
                       "relation": "at_least_one_wolf", "confidence": 0.25,
                       "confirmed": False, "visibility": visibility})
     # Explicit first-person declarations only. "2号像预言家" is not a claim by
     # the speaker to hold that role, and "我不是预言家" must not become one.
-    for match in re.finditer(r"(?:我(?:是|就是|自称|这(?:张)?(?:牌)?是)|我的身份(?:是|为))\s*(?:个|一名|一张)?(预言家|女巫|村民|狼人)", text):
+    for match in re.finditer(r"(?:我(?:是|就是|自称|这(?:张)?(?:牌)?是)|我的身份(?:是|为))\s*(?:个|一名|一张)?(预言家|女巫|村民|白狼王|狼美人|隐狼|狼人|狼王|猎人|守卫|骑士|白痴)", text):
         if _quoted_claim(text, match.start()):
             continue
         role = ROLE_WORDS[match.group(1)]
@@ -226,14 +228,19 @@ def _speech(memory: dict[str, Any], text: str, pid: int | None, self_pid: int, d
             _contradiction(memory, pid, day, f"{pid}号身份声称由{previous['claimed_role']}变为{role}，需追问原因。",
                            previous["event_id"], event_id, visibility=visibility)
     check_patterns = (
-        (r"(?:查杀|查验(?:了|过)?|验了|验出|查了|验)([1-6])号(?:[^。；，]{0,10}?(?:是|为)?(狼人|好人|金水))?", None),
-        (r"([1-6])号(?:是|为|给了我|给)?(?:我的)?(查杀|金水)", None),
-        (r"(?:给|发)([1-6])号(?:一张|个)?(查杀|金水)", None),
+        (r"(?:查杀|查验(?:了|过)?|验了|验出|查了|验)([1-9][0-9]?)号(?:[^。；，]{0,10}?(?:是|为)?(狼人|好人|金水))?", None),
+        (r"([1-9][0-9]?)号(?:是|为|给了我|给)?(?:我的)?(查杀|金水)", None),
+        (r"(?:给|发)([1-9][0-9]?)号(?:一张|个)?(查杀|金水)", None),
     )
     extracted: set[tuple[int, str]] = set()
     for pattern, _ in check_patterns:
         for match in re.finditer(pattern, text):
             if _quoted_claim(text, match.start()):
+                continue
+            # A denial of performing a check is not a claimed check result.
+            # Negating the result *after* the target is handled separately.
+            prefix = re.split(r"[。；，,！？\n]", text[:match.start()])[-1]
+            if re.search(r"(?:没(?:有)?|并未|从未|未曾|不是|不曾)$", prefix):
                 continue
             target = int(match.group(1))
             wording = match.group(2) if len(match.groups()) > 1 else None
@@ -242,7 +249,7 @@ def _speech(memory: dict[str, Any], text: str, pid: int | None, self_pid: int, d
             after_target = clauses[0]
             if len(clauses) > 1 and re.match(r"\s*(?:他|此人|结果)", clauses[1]):
                 after_target += clauses[1]
-            after_target = re.split(r"[1-6]号", after_target)[0]
+            after_target = re.split(r"[1-9][0-9]?号", after_target)[0]
             negated_wolf = bool(re.search(r"(?:不是|并非|非)(?:狼人|狼)(?![坑队])", after_target))
             explicit_wolf = bool(re.search(r"(?:是|为)(?:狼人|狼)(?![坑队])", after_target))
             result = "good" if negated_wolf else \
@@ -268,8 +275,8 @@ def _speech(memory: dict[str, Any], text: str, pid: int | None, self_pid: int, d
             if prior and result != "unreported" and prior["result"] != result:
                 _contradiction(memory, pid, day, f"{pid}号对{target}号的查验声称前后不同，需核对查验时间。",
                                prior["event_id"], event_id, visibility=visibility)
-    stance_patterns = {"suspect": r"(?:最怀疑|更怀疑|主要怀疑|怀疑|不信|不相信|不支持|不站边|反对)([1-6])号",
-                       "support": r"(?<!不)(?:站边|支持|相信|信任|力保|跟随)([1-6])号"}
+    stance_patterns = {"suspect": r"(?:最怀疑|更怀疑|主要怀疑|怀疑|不信|不相信|不支持|不站边|反对)([1-9][0-9]?)号",
+                       "support": r"(?<!不)(?:站边|支持|相信|信任|力保|跟随)([1-9][0-9]?)号"}
     for stance, pattern in stance_patterns.items():
         for match in re.finditer(pattern, text):
             # Negating a former stance is evidence of a possible contradiction,
@@ -357,7 +364,7 @@ def update_memory(memory: dict[str, Any] | None, event: dict[str, Any], self_pid
                 continue
             _append_fact(current, f"{event_id}:note{index}", day, note, self_pid, visibility,
                          kind="private_check" if "查验" in note else "own_skill_result", confirmed=True)
-            match = re.search(r"查验[：:]\s*([1-6])号是(狼人|好人)", note)
+            match = re.search(r"查验[：:]\s*([1-9][0-9]?)号是(狼人|好人)", note)
             if match:
                 _belief(current, int(match.group(1)), "wolf" if match.group(2) == "狼人" else "good", 1.0,
                         event_id, confirmed=True)

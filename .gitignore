@@ -13,3 +13,8 @@ test-artifacts/
 *.zip
 !requirements.lock
 !requirements-dev.lock
+
+# BYOK runtime secrets
+*.key
+.env.*
+!.env.example

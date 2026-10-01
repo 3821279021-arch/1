@@ -1,11 +1,11 @@
 {
-  "name": "月下狼人杀 · V2",
-  "short_name": "狼人杀 V2",
-  "description": "真人 + AI 玩家 + 私人 AI 搭档的实时狼人杀房间",
+  "name": "月下狼人杀 · V3",
+  "short_name": "狼人杀 V3",
+  "description": "多模型 AI 社交推理竞技场 · 真人同桌 · 随机入座",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0c1020",
-  "theme_color": "#0c1020",
+  "background_color": "#10161e",
+  "theme_color": "#10161e",
   "icons": [
     {
       "src": "/static/icon-192.png",

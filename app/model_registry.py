@@ -7,6 +7,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
+from .credentials import PROVIDERS, validate_model_id
+
 DEFAULT_MODELS = {
     "openai": "gpt-4.1-mini", "anthropic": "claude-sonnet-4-20250514",
     "gemini": "gemini-2.5-flash", "dashscope": "qwen-plus",
@@ -87,10 +89,11 @@ class ModelRegistry:
     def register(self, provider: str, model: str, *, configured: bool | None = None,
                  enabled: bool = True, healthy: bool = True, capabilities: list[str] | None = None) -> ModelEntry:
         provider = provider.lower()
-        if provider not in DEFAULT_MODELS or not isinstance(model, str) or not model or ":" in model:
+        if provider not in PROVIDERS or not isinstance(model, str):
             raise ValueError("Unknown provider or invalid actual model ID")
+        validate_model_id(model)
         # configured may be overridden in isolated tests; production registration still checks the environment.
-        entry = ModelEntry(provider, model, bool(os.getenv(KEY_NAMES[provider])) if configured is None else configured,
+        entry = ModelEntry(provider, model, bool(os.getenv(KEY_NAMES.get(provider, provider.upper().replace("-", "_") + "_API_KEY"))) if configured is None else configured,
                            enabled, healthy, list(capabilities) if capabilities is not None else ["chat", "json", "stream"])
         self._entries[entry.key] = entry
         return entry

@@ -7,6 +7,7 @@ import time
 from typing import Any
 
 from .game import PHASE_NAMES, ROLE_NAMES, WerewolfGame
+from .roles import GAME_MODES, ROLE_DEFINITIONS
 from .rules import RuleEngine
 
 
@@ -17,10 +18,23 @@ class InformationScope:
         started = g.phase != "lobby"
         # Night actor IDs would disclose who holds a hidden role.
         public_turn = g.current_turn_player_id if g.phase in {"day_speech", "last_words"} else None
+        presets = {key: {k: deepcopy(v) for k, v in preset.items()
+                        if k not in {"credential_id", "credential_owner_id"}}
+                   for key, preset in g.seat_presets.items()}
+        for key, preset in g.seat_presets.items():
+            presets[key]["has_credential"] = bool(preset.get("credential_id"))
         view = {
             "room_id": g.room_id, "game_id": g.game_id, "title": g.title, "pace": g.pace,
             "state_revision": g.state_revision, "turn_id": g.turn_id, "event_seq": g.event_seq,
-            "lifecycle": g.lifecycle, "seat_presets": deepcopy(g.seat_presets),
+            "lifecycle": g.lifecycle, "seat_presets": presets,
+            "mode": g.mode, "player_count": g.player_count, "role_roster": list(g.role_roster),
+            "game_mode": GAME_MODES[g.mode].public() if g.mode in GAME_MODES else {
+                "key": "custom", "display_name": "自定义板子", "player_count": g.player_count,
+                "roles": list(g.role_roster)},
+            "rules": {"roles": [ROLE_DEFINITIONS[role].public() for role in dict.fromkeys(g.role_roster)],
+                      "victory": "狼阵营全部死亡好人胜；狼人数达到或超过好人数狼人胜。",
+                      "voting": "可弃票、不可投自己；最高票平票无人出局。翻牌白痴失去投票权。",
+                      "timing": "所有动作完成即推进，倒计时仅为最长等待时间。"},
             "locked": g.locked, "has_password": bool(g.password_hash),
             "unique_model_per_ai_seat": g.unique_model_per_ai_seat,
             "day": g.day, "phase": g.phase, "phase_name": PHASE_NAMES[g.phase],
@@ -36,20 +50,32 @@ class InformationScope:
                          "model": q.model if not q.owner_id else None, "model_key": q.model_key if not q.owner_id else None,
                          "model_locked": q.model_locked, "voice_profile": deepcopy(q.voice_profile),
                          "execution_status": deepcopy(q.execution_status),
-                         "role": ROLE_NAMES[q.role] if started and (q.id == pid or g.game_over) else None}
+                         "has_credential": bool(q.credential_id),
+                         "can_vote": not q.role_state.get("vote_disabled", False),
+                         "role": ROLE_NAMES[q.role] if started and (q.id == pid or g.game_over or q.role_state.get("revealed")) else None}
                         for q in g.players],
             "self": {"id": pid, "name": p.name, "alive": p.alive,
                      "agent_id": p.agent_id,
                      "role": ROLE_NAMES[p.role] if started else None,
                      "role_key": p.role if started else None,
-                     "private_notes": list(p.private_notes), "memory": deepcopy(p.memory)},
+                     "private_notes": list(p.private_notes), "memory": deepcopy(p.memory),
+                     "faction": ROLE_DEFINITIONS[p.role].faction if started else None,
+                     "wolf_channel": started and g.in_wolf_channel(p),
+                     "role_state": ROLE_DEFINITIONS[p.role].private_information(g, p) if started else {}},
             "events": deepcopy(g.events),
-            "vote_status": {str(q.id): str(q.id) in g.votes for q in g.alive_players()} if g.phase == "day_vote" else {},
+            "vote_status": {str(pid): str(pid) in g.votes for pid in RuleEngine(g).required_actors()} if g.phase == "day_vote" else {},
             "pending_action": RuleEngine(g).action_for(pid) if started else None,
+            "secondary_actions": RuleEngine(g).secondary_actions(pid) if started else [],
+            "completion": {"submitted": pid in g.submitted, "deadline_semantics": "maximum_wait"},
         }
-        if started and p.role == "wolf":
-            view["wolf_teammates"] = ([{"id": q.id, "alive": q.alive} for q in g.players if q.role == "wolf" and q.id != pid] if p.alive else deepcopy(p.wolf_teammates_at_death))
-            view["wolf_chat"] = deepcopy([entry for entry in g.wolf_chat if p.alive or entry.get("event_seq", entry.get("seq", 0)) <= (p.wolf_visible_until or 0)])
+        if started and (g.in_wolf_channel(p) or p.role == "hidden_wolf"):
+            view["wolf_teammates"] = ([{"id": q.id, "alive": q.alive} for q in g.players
+                                        if ROLE_DEFINITIONS[q.role].wolf_channel and q.id != pid]
+                                       if p.alive else deepcopy(p.wolf_teammates_at_death))
+            if g.in_wolf_channel(p):
+                view["wolf_chat"] = deepcopy([entry for entry in g.wolf_chat
+                    if (p.alive or entry.get("event_seq", entry.get("seq", 0)) <= (p.wolf_visible_until or 0))
+                    and entry.get("event_seq", entry.get("seq", 0)) >= p.role_state.get("wolf_access_start", 0)])
         return view
 
     @staticmethod
@@ -59,6 +85,10 @@ class InformationScope:
             raise ValueError("你不属于此房间")
         view = InformationScope.player_view(g, p.id)
         view["is_host"] = g.host_id == owner_id
+        if view["is_host"]:
+            for key, preset in g.seat_presets.items():
+                if preset.get("credential_owner_id") == owner_id:
+                    view["seat_presets"][key]["credential_id"] = preset.get("credential_id")
         view["pet"] = asdict(g.pets[owner_id])
         return view
 
@@ -86,4 +116,4 @@ class InformationScope:
             return True
         if event["audience"] == "player":
             return event["player_id"] == p.id
-        return event["audience"] == "wolves" and p.role == "wolf" and p.alive
+        return event["audience"] == "wolves" and g.in_wolf_channel(p) and p.alive

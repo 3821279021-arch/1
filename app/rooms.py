@@ -11,6 +11,7 @@ import time
 from typing import Any
 
 from .ai import AIOrchestrator, memory_from
+from .credentials import validate_model_options
 from .game import PERSONALITIES, WerewolfGame
 from .limits import Limits
 from .llm import LLMRouter
@@ -18,7 +19,6 @@ from .persistence import Store
 from .rules import RuleEngine
 from .scope import InformationScope
 from .security import password_matches
-from .strategy import GameBeliefState
 
 log = logging.getLogger(__name__)
 
@@ -102,6 +102,12 @@ class RoomManager:
         data = InformationScope.owner_view(room.game, owner_id)
         data["provider_status"] = self.router.status()
         data["model_registry"] = self.router.model_status()
+        connected = {c.owner_id for c in room.connections}
+        for player in data["players"]:
+            actor = room.game.player(player["id"])
+            player["connected"] = actor.owner_id in connected if actor.owner_id else True
+            public_phase = room.game.phase in {"day_speech", "day_vote", "last_words"}
+            player["thinking"] = public_phase and any(key[1] == actor.id and not job.done() for key, job in room.jobs.items())
         keys: dict[str, list[int]] = {}
         for p in room.game.players:
             if not p.owner_id and not p.model_key.startswith("mock:"):
@@ -159,20 +165,83 @@ class RoomManager:
                     self.push(connection, {"type": "session_revoked", "data": {}})
                     room.connections.discard(connection)
 
-    async def create(self, owner_id: str, name: str, seat: int, title: str, pace: str, action_id: str | None = None) -> dict[str, Any]:
+    def invalidate_credential(self, owner_id: str, credential_id: str) -> None:
+        """Abort jobs whose credential was deleted or replaced, then reschedule safely."""
+        for room in self.rooms.values():
+            for player in room.game.players:
+                if getattr(player, "credential_owner_id", None) == owner_id and getattr(player, "credential_id", None) == credential_id:
+                    for key, task in list(room.jobs.items()):
+                        if key[1] == player.id or key[1] == 0:
+                            task.cancel()
+                            room.jobs.pop(key, None)
+
+    async def analysis(self, room_id: str, owner_id: str, game_id: str | None = None) -> dict[str, Any]:
+        room = await self.require_async(room_id, owner_id)
+        async with room.lock:
+            requested = game_id or room.game.game_id
+            if requested == room.game.game_id:
+                if not room.game.game_over:
+                    raise PermissionError("对局结束后才能查看身份、竞技统计与回放")
+                game = deepcopy(room.game)
+            else:
+                game = await self.store.call("completed_game", room_id, requested)
+                if game is None:
+                    raise ValueError("已完成的对局不存在")
+            # Current room membership does not grant access to a game played
+            # before this user joined the room.
+            if not game.owned_player(owner_id):
+                raise PermissionError("你未参与此对局")
+        if self.router._background_writes:
+            await asyncio.gather(*self.router._background_writes, return_exceptions=True)
+        telemetry = await self.store.call("model_report", room_id, requested)
+        events = await self.store.call("public_replay", room_id, requested)
+        from .roles import ROLE_DEFINITIONS
+        from .analysis import analyze_public_speeches
+        speech_analysis = analyze_public_speeches(game.events)
+        metrics = []
+        actions = getattr(game, "action_history", [])
+        for player in game.players:
+            calls = [record for record in telemetry["calls"] if record.get("agent_id") == player.agent_id]
+            outcomes = [record for record in telemetry["outcomes"] if record.get("agent_id") == player.agent_id]
+            own_actions = [record for record in actions if record.get("player_id") == player.id]
+            votes = [record for record in own_actions if record.get("action") == "vote"]
+            hits = sum(1 for record in votes if record.get("target") and ROLE_DEFINITIONS[game.player(record["target"]).role].faction == "wolves")
+            speeches = [event for event in game.events if event.get("kind") == "speech" and event.get("player_id") == player.id]
+            faction = ROLE_DEFINITIONS[player.role].faction
+            win_faction = "wolves" if game.winner in {"wolves", "wolf", "狼人"} else "good" if game.winner in {"good", "好人"} else None
+            metrics.append({"id": player.id, "name": player.name, "model": player.model if not player.owner_id else "真人",
+                "role": player.role, "role_name": ROLE_DEFINITIONS[player.role].display_name, "faction": faction,
+                "won": faction == win_faction if win_faction else None, "speeches": len(speeches), "votes": len(votes), "vote_hits": hits,
+                "vote_accuracy": round(hits / len(votes), 3) if votes else None,
+                "actions": len(own_actions), "skills": sum(record.get("action") not in {"speech", "vote", "wolf_discuss"} for record in own_actions), "action_history": own_actions,
+                "latency_ms": round(sum(record.get("latency_ms", 0) for record in calls) / len(calls)) if calls else 0,
+                "input_tokens": sum(record.get("input_tokens", record.get("estimated_input_tokens", 0)) for record in calls),
+                "output_tokens": sum(record.get("output_tokens", 0) for record in calls),
+                "estimated_cost": round(sum(record.get("estimated_cost", 0) for record in calls), 6) if any("estimated_cost" in record for record in calls) else 0 if outcomes and all(record.get("provider_used") == "mock" for record in outcomes) else None,
+                "errors": sum(not record.get("success", False) for record in calls),
+                "fallbacks": sum(record.get("status") == "fallback" or bool(record.get("failure_reason")) for record in outcomes),
+                "calls": len(calls),
+                "actual_models": sorted({record.get("model_key") for record in outcomes if record.get("model_key")}),
+                **speech_analysis["players"].get(str(player.id), {})})
+        return {"game_id": requested, "winner": game.winner, "mode": game.mode, "player_count": game.player_count,
+                "players": metrics, "events": events, "speech_analysis_note": speech_analysis["note"],
+                "usage_note": "无上游 usage 时输入 token 为估算；费用按部署者配置单价估算，Mock 不代表真实模型能力。"}
+
+    async def create(self, owner_id: str, name: str, seat: int | None = None, title: str = "月下狼人杀", pace: str = "standard", action_id: str | None = None, *, mode: str = "quick6", player_count: int | None = None, roles: list[str] | None = None) -> dict[str, Any]:
         existing = await self.store.call("created", owner_id, action_id) if action_id else None
         if existing:
             return self.snapshot(await self.get_async(existing.room_id), owner_id)
         await asyncio.to_thread(self.limits.check, "room", owner_id)
         game = WerewolfGame(secrets.token_hex(5), owner_id, title=title, pace=pace, creation_action_id=action_id)
         room = self._room(game)
+        room.engine.configure(owner_id, pace, [], mode=mode, player_count=player_count, roles=roles)
         room.engine.join(owner_id, name, seat)
         log.info("room_created room_id=%s request_id=%s", game.room_id, action_id)
         self.rooms[game.room_id] = room
         await self.commit_async(room)
         return self.snapshot(room, owner_id)
 
-    async def join(self, room_id: str, owner_id: str, name: str, seat: int, password: str = "") -> dict[str, Any]:
+    async def join(self, room_id: str, owner_id: str, name: str, seat: int | None = None, password: str = "") -> dict[str, Any]:
         room = await self.get_async(room_id)
         async with room.lock:
             if room.game.lifecycle != "LOBBY":
@@ -220,13 +289,34 @@ class RoomManager:
                     room.engine.consume_delegate(owner_id)
             elif command == "start":
                 self.limits.check_active_rooms(sum(r.game.lifecycle == "ACTIVE" for r in self.rooms.values()))
-                presets = [{"id": seat, "provider": "mock", "personality": list(PERSONALITIES)[seat-1], **room.game.seat_presets.get(str(seat), {})} for seat in range(1,7) if not any(p.id==seat for p in room.game.players)]
-                assignments = self.router.registry.allocate(presets, unique=room.game.unique_model_per_ai_seat)
+                presets = [{"id": seat, "provider": "mock", "personality": list(PERSONALITIES)[(seat-1) % len(PERSONALITIES)], **room.game.seat_presets.get(str(seat), {})} for seat in range(1, room.game.player_count+1) if not any(p.id==seat for p in room.game.players)]
+                platform = [entry for entry in presets if not entry.get("credential_id")]
+                assignments = self.router.registry.allocate(platform, unique=room.game.unique_model_per_ai_seat)
+                selected = set(assignments.values()) - {"mock:mock"}
+                for entry in presets:
+                    if entry.get("credential_id"):
+                        binding = self.router.credentials.validate_route(entry["credential_owner_id"], entry["credential_id"], entry["model_id"], scope_id=room_id)
+                        key = binding["model_key"]
+                        if room.game.unique_model_per_ai_seat and key in selected:
+                            raise ValueError("独立模型模式下，每个 AI 座位须使用不同模型 ID；可在大厅关闭独立模型限制")
+                        selected.add(key)
+                        assignments[entry["id"]] = key
                 room.engine.start(owner_id, model_assignments=assignments)
             elif command in {"lock", "password", "kick", "reopen"}:
                 await asyncio.to_thread(room.engine.moderate, owner_id, command, payload)
             elif command == "configure":
-                room.engine.configure(owner_id, payload["pace"], payload["seats"], payload.get("unique_model_per_ai_seat"))
+                seats = deepcopy(payload["seats"])
+                for entry in seats:
+                    entry.pop("credential_owner_id", None)
+                    if entry.get("credential_id") is not None and not isinstance(entry["credential_id"], str):
+                        raise ValueError("凭据标识格式无效")
+                    entry["model_options"] = validate_model_options(entry.get("model_options"))
+                    if entry.get("credential_id"):
+                        binding = self.router.credentials.validate_route(owner_id, entry["credential_id"], entry.get("model_id", ""), scope_id=room_id)
+                        entry.update(credential_owner_id=owner_id, provider=binding["provider"], model_id=binding["model_id"], model_key=binding["model_key"])
+                room.engine.configure(owner_id, payload["pace"], seats, payload.get("unique_model_per_ai_seat"), mode=payload.get("mode"), player_count=payload.get("player_count"), roles=payload.get("roles"))
+            elif command == "seat":
+                room.engine.change_seat(owner_id, payload.get("seat"))
             elif command == "wolf_chat":
                 room.engine.wolf_message(room.game.owned_player(owner_id).id, payload["text"])
             elif command == "pet_config":
@@ -250,6 +340,8 @@ class RoomManager:
                 room.engine.close_room(owner_id)
                 for task in room.jobs.values(): task.cancel()
                 room.jobs.clear()
+                if getattr(self.router, "credentials", None):
+                    self.router.credentials.clear_scope(room_id)
             elif command == "rematch":
                 room.engine.rematch(owner_id)
                 for task in room.jobs.values(): task.cancel()
@@ -320,7 +412,10 @@ class RoomManager:
         valid = g.game_id==view["game_id"] and g.turn_id==view["turn_id"] and g.lifecycle=="ACTIVE" and self.can_control(room,pid)
         if valid:
             p = g.player(pid)
-            valid = (p.alive and p.role=="wolf" and g.phase=="night_discussion") if discussion else bool(room.engine.action_for(pid))
+            valid = bool(room.engine.action_for(pid))
+            route = view.get("_credential_route")
+            if valid and route and route.get("revision") is not None:
+                valid = self.router.credentials.route_valid(route["owner_id"], route["id"], route["revision"], scope_id=g.room_id)
         if not valid:
             log.info("stale_ai_response room=%s game=%s turn=%s revision=%s", g.room_id, view["game_id"], view["turn_id"], view["state_revision"])
         return valid
@@ -350,14 +445,26 @@ class RoomManager:
                 p = room.game.player(pid)
                 view = InformationScope.ai_view(room.game, pid)
                 memory = memory_from(view, p.memory)
-                p.conversation_state["belief_state"] = GameBeliefState.from_view(view, memory).dump()
                 if p.owner_id:
                     pet = room.game.pets[p.owner_id]
                     provider, personality, style, agent_id = pet.model_key or pet.provider, pet.personality, dict(pet.play_style), pet.agent_id
                 else:
                     provider, personality, style, agent_id = p.model_key or p.provider, p.personality, {}, p.agent_id
+                route_metadata = {}
+                if getattr(p, "credential_id", None):
+                    route_metadata = {"credential_id": p.credential_id, "credential_owner_id": p.credential_owner_id,
+                                      "credential_scope_id": room.game.room_id, "model_id": p.model_id or p.model,
+                                      "model_parameters": getattr(p, "model_options", {})}
+                    try:
+                        credential = self.router.credentials.get(p.credential_owner_id, p.credential_id, scope_id=room.game.room_id)
+                        route_metadata["credential_revision"] = credential.get("revision")
+                        view["_credential_route"] = {"id": p.credential_id, "owner_id": p.credential_owner_id, "revision": credential.get("revision")}
+                    except (ValueError, PermissionError):
+                        # A deleted temporary credential is an explicit failed route;
+                        # the router records neutral fallback, without borrowing a key.
+                        view["_credential_route"] = {"id": p.credential_id, "owner_id": p.credential_owner_id, "revision": None}
             category = "wolf_discussion" if discussion else view["pending_action"]["type"]
-            with self.router.request_scope(room_id=room.game.room_id, game_id=view["game_id"], agent_id=agent_id, category=category, day=view["day"], phase=view["phase"], request_id=f"{view['turn_id']}:{pid}", guard=self.limits):
+            with self.router.request_scope(room_id=room.game.room_id, game_id=view["game_id"], agent_id=agent_id, category=category, day=view["day"], phase=view["phase"], request_id=f"{view['turn_id']}:{pid}", guard=self.limits, **route_metadata):
                 if discussion:
                     message = await self.ai.wolf_discuss(view, provider, personality, memory, style)
                     async with room.lock:
@@ -366,13 +473,28 @@ class RoomManager:
                         self.execution(room,pid,agent_id,category)
                         await self.commit_async(room)
                     return
+                if category in {"speech", "vote"} and view.get("secondary_actions"):
+                    with self.router.request_scope(category="secondary_skill"):
+                        extra = await self.ai.choose_secondary(view, provider, personality, memory, style)
+                    if extra:
+                        async with room.lock:
+                            if not self.applicable(room, pid, view): return
+                            room.engine.apply(pid, extra)
+                            self.execution(room, pid, agent_id, "secondary_skill")
+                            await self.commit_async(room)
+                            fresh = InformationScope.ai_view(room.game, pid)
+                            if fresh["turn_id"] != view["turn_id"] or not fresh.get("pending_action"):
+                                return
+                            fresh["_credential_route"] = view.get("_credential_route")
+                            view = fresh
                 if category == "speech":
                     async for chunk in self.ai.speak(view, provider, personality, memory, style):
                         async with room.lock:
                             if not self.applicable(room,pid,view) or not room.engine.append_speech(pid,chunk,sequence): return
                             # Hot path: event only, no full state serialization or SQLite write.
                             await self.commit_async(room, save=False, snapshot=False)
-                    await asyncio.sleep(self.ai_pause)
+                    if self.ai_pause:
+                        await asyncio.sleep(min(self.ai_pause, 0.8))
                     async with room.lock:
                         if not self.applicable(room,pid,view): return
                         payload = {"action":"speech", "speech":room.game.current_speech or "我先听后续发言。", "game_id":view["game_id"], "turn_sequence":sequence, "turn_id":view["turn_id"]}
@@ -384,7 +506,6 @@ class RoomManager:
                         await self.commit_async(room)
                 else:
                     proposal = await self.ai.propose(view,provider,personality,memory,style)
-                    await asyncio.sleep(min(self.ai_pause,0.7))
                     async with room.lock:
                         if not self.applicable(room,pid,view): return
                         room.engine.apply(pid,proposal)
@@ -398,10 +519,16 @@ class RoomManager:
         except ValueError:
             if view: log.info("stale_ai_response rejected room=%s turn=%s", room.game.room_id,view["turn_id"])
         except Exception as exc:
-            log.warning("AI action failed room=%s error=%s; clock continues", room.game.room_id,type(exc).__name__)
+            log.warning("AI action failed room=%s error=%s", room.game.room_id,type(exc).__name__)
             async with room.lock:
-                if view and self.applicable(room,pid,view) and room.game.current_speech:
-                    room.engine.emit("speech_error", {"player_id":pid,"partial":True,"message":"模型输出中断，已保留文字"})
+                if view and self.applicable(room,pid,view):
+                    pending = room.engine.action_for(pid)
+                    payload = {"action": pending["type"], "game_id": view["game_id"], "turn_sequence": sequence,
+                               "turn_id": view["turn_id"], "target": None, "save": False, "poison_target": None}
+                    if pending["type"] == "speech":
+                        payload["speech"] = room.game.current_speech or "（模型连接失败，本轮跳过）"
+                        room.engine.emit("speech_error", {"player_id":pid,"partial":bool(room.game.current_speech),"message":"模型连接失败，已结束本轮"})
+                    room.engine.apply(pid, payload)
                     await self.commit_async(room)
 
     async def discussion_rounds(self, room: Room, sequence: int) -> None:
@@ -410,8 +537,18 @@ class RoomManager:
         for _ in range(2):
             for p in list(room.game.players):
                 if room.game.turn_sequence!=sequence: return
-                if p.alive and p.role=="wolf" and self.can_control(room,p.id):
+                pending = room.engine.action_for(p.id)
+                if pending and pending["type"] == "wolf_discuss" and self.can_control(room,p.id):
                     await self.actor(room,p.id,sequence,True)
+        async with room.lock:
+            if room.game.turn_sequence != sequence:
+                return
+            for p in list(room.game.players):
+                pending = room.engine.action_for(p.id)
+                if pending and pending["type"] == "wolf_discuss" and self.can_control(room,p.id):
+                    room.engine.apply(p.id, {"action": "wolf_discuss", "game_id": room.game.game_id,
+                                            "turn_sequence": sequence, "turn_id": room.game.turn_id})
+            await self.commit_async(room)
 
     def launch_jobs(self, room: Room) -> None:
         g = room.game

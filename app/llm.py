@@ -17,7 +17,8 @@ from dataclasses import dataclass, field
 from typing import Any
 from statistics import median
 from .tokens import estimate_tokens
-from .providers import HTTPProviderAdapter, action_schema
+from .providers import HTTPProviderAdapter, action_schema, provider_request, SecretStreamFilter, redact_secret
+from .credentials import Credential, CredentialError, PROVIDER_URLS, check_public_endpoint, validate_model_id, validate_model_options, discover_models, pin_request
 from .limits import Limits
 
 import httpx
@@ -104,8 +105,10 @@ class LLMRouter:
         self.outcome_records: deque[dict[str, Any]] = deque(maxlen=5000)
         self._executions: dict[str, dict[str, Any]] = {}
         self._last_execution: dict[str, Any] = {}
+        self.credentials = None
+        self._credential: ContextVar[Credential | None] = ContextVar(f"llm_credential_{id(self)}", default=None)
         self._client: httpx.AsyncClient | None = None
-        self.adapters = {p: HTTPProviderAdapter(p, self) for p in self.models}
+        self.adapters = {p: HTTPProviderAdapter(p, self) for p in [*self.models, "openai-compatible"]}
         self._schema: ContextVar[dict | None] = ContextVar(f"llm_schema_{id(self)}", default=None)
         self.calibration: dict[str, deque] = {}
         self.safety_margin = max(1.0, min(1.2, float(os.getenv("TOKEN_SAFETY_MARGIN", "1.15"))))
@@ -115,7 +118,7 @@ class LLMRouter:
     @property
     def client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
-            self._client = httpx.AsyncClient(timeout=self.timeout, limits=httpx.Limits(max_connections=20, max_keepalive_connections=10))
+            self._client = httpx.AsyncClient(timeout=self.timeout, follow_redirects=False, trust_env=False, limits=httpx.Limits(max_connections=20, max_keepalive_connections=10))
         return self._client
 
     async def close(self) -> None:
@@ -252,9 +255,15 @@ class LLMRouter:
         samples = self.calibration.get(entry.key, [])
         coefficient = max(0.6, min(1.6, median(samples))) if len(samples) >= 3 else 1.0
         meta.update(base_input_tokens=base, calibration_coefficient=coefficient)
+        options = validate_model_options(scope.get("model_parameters") or scope.get("model_options"))
+        output_limit = options.get("max_output_tokens", 350 if stream else 600)
+        if entry.provider == "anthropic" and options.get("enable_thinking") is not False:
+            budget = options.get("thinking_budget", {"minimal": 1024, "low": 2048, "medium": 4096, "high": 8192, "xhigh": 16384}.get(options.get("reasoning_effort"), 2048 if options.get("enable_thinking") else 0))
+            if budget:
+                output_limit += max(1024, budget)
         meta.update(provider=entry.provider, model=entry.model, model_key=entry.key, requested_model=requested,
                     category=scope.get("category") or ctx.get("action") or ("speech" if stream else "json"),
-                    max_output_tokens=350 if stream else 600, estimated_input_tokens=math.ceil(base * coefficient * self.safety_margin))
+                    max_output_tokens=output_limit, estimated_input_tokens=math.ceil(base * coefficient * self.safety_margin))
         guard = scope.get("guard") or self.call_guard
         ticket = None
         if guard is not None:
@@ -328,9 +337,13 @@ class LLMRouter:
         action = ctx.get("action")
         if action in {"speech", "pet", "wolf_discussion"}:
             return isinstance(data.get("speech"), str) and bool(data["speech"].strip())
-        if action not in {"vote", "wolf_kill", "seer_inspect", "witch"}:
+        if action == "wolf_discuss":
+            return isinstance(data.get("text"), str)
+        if action == "optional_skill":
+            return "action" in data and (data["action"] is None or isinstance(data["action"], str))
+        if action not in {"vote", "wolf_kill", "seer_inspect", "witch", "guard_protect", "hunter_shoot", "knight_duel", "duel", "wolf_king_shoot", "wolf_beauty_charm", "self_destruct"}:
             return True
-        aliases = {"vote": ("vote",), "wolf_kill": ("wolf_kill", "kill"), "seer_inspect": ("seer_inspect", "inspect"), "witch": ("witch",)}[action]
+        aliases = {"vote": ("vote",), "wolf_kill": ("wolf_kill", "kill"), "seer_inspect": ("seer_inspect", "inspect"), "witch": ("witch",), "guard_protect": ("guard_protect", "guard", "protect"), "hunter_shoot": ("hunter_shoot", "shoot"), "knight_duel": ("knight_duel", "duel"), "duel": ("duel", "knight_duel"), "wolf_king_shoot": ("wolf_king_shoot", "shoot"), "wolf_beauty_charm": ("wolf_beauty_charm", "charm"), "self_destruct": ("self_destruct",)}[action]
         values = data
         fields = ("save", "poison_target") if action == "witch" else ("target",)
         for _ in range(3):
@@ -346,15 +359,15 @@ class LLMRouter:
         return "target" in values and (target is None or type(target) is int and target in ctx.get("options", []))
 
     async def ask_json(self, provider: str, system_prompt: str, user_prompt: str, *, mock_context: dict[str, Any] | None = None, validator=None) -> LLMResult:
-        requested = self.registry.resolve(provider)
         ctx = mock_context or {}
+        requested, candidates, bound, route_reason = self._route_candidates(provider, ctx, "json")
         chain: list[str] = []
         reason = None
         started = time.monotonic()
         denied = False
-        candidates = self.registry.candidates(requested, "json")
+        reason = route_reason
         if not candidates and not requested.startswith("mock:"):
-            reason = "no_configured_healthy_models"
+            reason = reason or "no_configured_healthy_models"
         for entry in candidates:
             method = self.adapters[entry.provider].generate
             repair = False
@@ -369,6 +382,7 @@ class LLMRouter:
                     break
                 meta["fallback_chain"] = list(chain)
                 selection = self._selection.set(entry)
+                credential_token = self._credential.set(bound)
                 schema_token = self._schema.set(action_schema(ctx.get("action", ""), ctx.get("options", [])))
                 usage: dict[str, Any] = {}
                 usage_token = self._usage.set(usage)
@@ -379,6 +393,8 @@ class LLMRouter:
                     async with self.semaphore:
                         self.activity[entry.provider]["requests"] += 1
                         result = await method(system_prompt, attempt_user)
+                    if bound and not self.credentials.route_valid(bound.owner_id, bound.id, bound.revision, scope_id=bound.scope_id):
+                        raise ValueError("Credential changed during request")
                     if not self._valid_data(result.data, ctx) or validator is not None and not validator(result.data):
                         raise ValueError("Invalid model JSON or action format")
                     success = True
@@ -404,6 +420,7 @@ class LLMRouter:
                         break
                 finally:
                     self._selection.reset(selection)
+                    self._credential.reset(credential_token)
                     self._schema.reset(schema_token)
                     self._usage.reset(usage_token)
                     await self._after_call(guard, ticket, meta, started=before, success=success, reason=attempt_reason, usage=usage)
@@ -411,7 +428,7 @@ class LLMRouter:
                     await asyncio.sleep(self.retry_delay)
             if denied:
                 break
-        result = self._mock(ctx)
+        result = self._mock(ctx, error=(reason or "model_unavailable") if not requested.startswith("mock:") else None)
         if not requested.startswith("mock:"):
             requested_entry = self.registry.get(requested)
             if requested_entry:
@@ -421,110 +438,146 @@ class LLMRouter:
                                                  "budget_exhausted" if denied else "mock_fallback" if not requested.startswith("mock:") else "practice", started)
         return result
 
-    async def _dashscope(self, system_prompt: str, user_prompt: str) -> LLMResult:
-        payload = {"model": self._model("dashscope"), "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                   "response_format": {"type": "json_object"}, "max_tokens": 600, "enable_thinking": False}
-        client = self.client
-        response = await client.post(self.dashscope_url + "/chat/completions", headers={"Authorization": f"Bearer {os.environ['DASHSCOPE_API_KEY']}"}, json=payload)
+    def _connection(self, provider: str) -> Credential:
+        bound = self._credential.get()
+        if bound is not None:
+            if bound.provider != provider:
+                raise CredentialError("模型供应商与凭据不匹配")
+            return bound
+        base = self.dashscope_url if provider == "dashscope" else PROVIDER_URLS[provider]
+        return Credential("platform", "platform", provider, base, os.environ[f"{provider.upper()}_API_KEY"], "platform", "")
+
+    def _route_candidates(self, provider: str, ctx: dict, capability: str):
+        # This is transport metadata, never interpolated into either prompt.
+        route = {**(ctx.get("_model_route") or {}), **self._scope.get()}
+        credential_id = route.get("credential_id")
+        if not credential_id:
+            requested = self.registry.resolve(provider)
+            return requested, self.registry.candidates(requested, capability), None, None
+        model = route.get("model_id") or provider.split(":", 1)[-1]
+        requested = provider
+        try:
+            if self.credentials is None:
+                raise CredentialError("凭据服务不可用")
+            bound = self.credentials.resolve(route.get("credential_owner_id"), credential_id, scope_id=route.get("credential_scope_id"))
+            expected_revision = route.get("credential_revision")
+            if expected_revision is not None and bound.revision != expected_revision:
+                raise CredentialError("凭据已更新，请重新配置座位")
+            model = validate_model_id(model)
+            if bound.secret in model:
+                raise CredentialError("模型 ID 不得包含 API Key")
+            if bound.provider == "gemini":
+                model = model.removeprefix("models/")
+            requested = f"{bound.provider}:{model}"
+            self.activity.setdefault(bound.provider, {"requests": 0, "successes": 0, "failures": 0, "fallbacks": 0, "cancelled": 0, "partial_streams": 0, "tokens": 0, "last_error": None})
+            # BYOK has an isolated candidate pool, independent of platform keys.
+            return requested, [ModelEntry(bound.provider, model, True)], bound, None
+        except CredentialError:
+            return requested, [], None, "credential_unavailable"
+
+    async def refresh_platform_models(self) -> dict:
+        results = {}
+        for provider in self.models:
+            secret = os.getenv(f"{provider.upper()}_API_KEY")
+            if not secret:
+                continue
+            credential = self._connection(provider)
+            try:
+                models = await discover_models(credential, self.client)
+                for model in models:
+                    self.registry.register(provider, model["id"])
+                results[provider] = {"verified": True, "models": models, "manual_entry_allowed": True}
+            except (httpx.HTTPError, ValueError, KeyError, TypeError):
+                results[provider] = {"verified": False, "models": [], "manual_entry_allowed": True,
+                                     "error": "无法获取供应商模型列表，可配置手动模型 ID"}
+        return results
+
+    async def _provider_generate(self, provider: str, system_prompt: str, user_prompt: str) -> LLMResult:
+        credential = self._connection(provider)
+        address = await check_public_endpoint(credential.base_url)
+        route = self._scope.get()
+        url, headers, payload = provider_request(credential, self._model(provider), system_prompt, user_prompt,
+                                                schema=self._schema.get(), max_tokens=600, parameters=route.get("model_parameters") or route.get("model_options"))
+        url, headers, extensions = pin_request(url, headers, address)
+        response = await self.client.post(url, headers=headers, json=payload, follow_redirects=False, extensions=extensions)
         response.raise_for_status()
         body = response.json()
-        text = body["choices"][0]["message"].get("content") or ""
+        if body.get("error") or body.get("code"):
+            raise ValueError("Provider response error")
+        self._capture_usage(body, provider)
+        data = None
+        if provider == "openai":
+            text = "".join(part.get("text", "") for item in body.get("output", []) if item.get("type") == "message"
+                           for part in item.get("content", []) if part.get("type") == "output_text")
+        elif provider == "anthropic":
+            text = "".join(block.get("text", "") for block in body.get("content", []) if block.get("type") == "text")
+            data = next((block.get("input") for block in body.get("content", []) if block.get("type") == "tool_use" and block.get("name") == "game_action"), None)
+        elif provider == "gemini":
+            text = "".join(part.get("text", "") for part in body.get("candidates", [{}])[0].get("content", {}).get("parts", []) if not part.get("thought"))
+        else:
+            source = body.get("output", body)
+            text = source["choices"][0]["message"].get("content") or ""
         if not isinstance(text, str):
-            raise ValueError("Invalid compatible API message content")
-        self._capture_usage(body, "dashscope")
-        return LLMResult(extract_json(text), "dashscope", self._model("dashscope"), text)
+            raise ValueError("Invalid provider text content")
+        text = redact_secret(text, credential.secret)
+        data = redact_secret(data, credential.secret) if isinstance(data, dict) else extract_json(text)
+        return LLMResult(data, provider, self._model(provider), text)
+
+    async def _dashscope(self, system_prompt: str, user_prompt: str) -> LLMResult:
+        return await self._provider_generate("dashscope", system_prompt, user_prompt)
 
     async def _openai(self, system_prompt: str, user_prompt: str) -> LLMResult:
-        headers = {
-            "Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": self._model("openai"),
-            "instructions": system_prompt,
-            "input": user_prompt,
-            "max_output_tokens": 500,
-        }
-        if self._schema.get():
-            payload["text"] = {"format": {"type": "json_schema", "name": "game_action", "strict": True, "schema": self._schema.get()}}
-        client = self.client
-        r = await client.post("https://api.openai.com/v1/responses", headers=headers, json=payload)
-        r.raise_for_status()
-        body = r.json()
-        self._capture_usage(body, "openai")
-        text = ""
-        for item in body.get("output", []):
-            if item.get("type") == "message":
-                for part in item.get("content", []):
-                    if part.get("type") == "output_text":
-                        text += part.get("text", "")
-        return LLMResult(extract_json(text), "openai", self._model("openai"), text)
+        return await self._provider_generate("openai", system_prompt, user_prompt)
 
     async def _anthropic(self, system_prompt: str, user_prompt: str) -> LLMResult:
-        headers = {
-            "x-api-key": os.environ["ANTHROPIC_API_KEY"],
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-        }
-        payload = {
-            "model": self._model("anthropic"),
-            "max_tokens": 500,
-            "system": system_prompt,
-            "messages": [{"role": "user", "content": user_prompt}],
-        }
-        if self._schema.get():
-            payload["tools"] = [{"name": "game_action", "description": "Submit the legal game action", "input_schema": self._schema.get()}]
-            payload["tool_choice"] = {"type": "tool", "name": "game_action"}
-        client = self.client
-        r = await client.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload)
-        r.raise_for_status()
-        body = r.json()
-        self._capture_usage(body, "anthropic")
-        text = "".join(block.get("text", "") for block in body.get("content", []) if block.get("type") == "text")
-        data = next((block.get("input") for block in body.get("content", []) if block.get("type") == "tool_use" and block.get("name") == "game_action"), None)
-        return LLMResult(data if isinstance(data, dict) else extract_json(text), "anthropic", self._model("anthropic"), text)
+        return await self._provider_generate("anthropic", system_prompt, user_prompt)
 
     async def _gemini(self, system_prompt: str, user_prompt: str) -> LLMResult:
-        model = self._model("gemini")
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-        headers = {
-            "x-goog-api-key": os.environ["GEMINI_API_KEY"],
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "systemInstruction": {"parts": [{"text": system_prompt}]},
-            "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
-            "generationConfig": {"responseMimeType": "application/json", "maxOutputTokens": 500},
-        }
-        if self._schema.get():
-            payload["generationConfig"]["responseJsonSchema"] = self._schema.get()
-        client = self.client
-        r = await client.post(url, headers=headers, json=payload)
-        r.raise_for_status()
-        body = r.json()
-        self._capture_usage(body, "gemini")
-        parts = body.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-        text = "".join(part.get("text", "") for part in parts)
-        return LLMResult(extract_json(text), "gemini", model, text)
+        return await self._provider_generate("gemini", system_prompt, user_prompt)
+
+    async def _openai_compatible(self, system_prompt: str, user_prompt: str) -> LLMResult:
+        return await self._provider_generate("openai-compatible", system_prompt, user_prompt)
 
     def _mock(self, ctx: dict[str, Any], error: str | None = None) -> LLMResult:
+        if error:
+            action = ctx.get("action", "speech")
+            if action == "witch":
+                data = {"save": False, "poison_target": None}
+            elif action == "optional_skill":
+                data = {"action": None, "target": None}
+            elif action == "wolf_discuss":
+                data = {"text": ""}
+            elif action in {"speech", "pet", "wolf_discussion"}:
+                data = {"speech": "模型连接失败，本轮跳过发言。"}
+            else:
+                data = {"target": None}
+            data["fallback_error"] = error[:180]
+            return LLMResult(data, "mock", "rule-based-mock", json.dumps(data, ensure_ascii=False))
         seed = int(ctx.get("seed", 1)) + int(ctx.get("seq", 0)) * 997 + int(ctx.get("player_id", 0)) * 31
         rng = random.Random(seed)
         action = ctx.get("action", "speech")
         alive = [int(x) for x in ctx.get("alive", [])]
         me = int(ctx.get("player_id", 0) or 0)
         candidates = ctx.get("options", [x for x in alive if x != me])
+        if action in {"speech", "wolf_discussion", "pet"} and not candidates:
+            candidates = [x for x in alive if x != me]
 
-        if action in {"wolf_kill", "seer_inspect", "kill", "inspect", "poison", "vote"}:
+        if action in {"wolf_kill", "seer_inspect", "kill", "inspect", "poison", "vote", "guard_protect", "hunter_shoot", "knight_duel", "duel", "wolf_king_shoot", "wolf_beauty_charm"}:
             target = rng.choice(candidates) if candidates else None
             if action in {"wolf_kill", "kill"}:
                 target = min(candidates) if candidates else None
             data = {"target": target, "reason": "基于当前公开发言和简单随机策略做出的判断。"}
+        elif action in {"self_destruct", "optional_skill"}:
+            data = {"action": None, "target": None} if action == "optional_skill" else {"target": None}
+        elif action == "wolf_discuss":
+            data = {"text": ""}
         elif action == "witch":
             killed = ctx.get("killed")
-            save = bool(killed) and bool(ctx.get("antidote")) and rng.random() < 0.45
-            poison_candidates = [x for x in candidates if x != killed]
+            save = bool(killed) and bool(ctx.get("can_save", ctx.get("antidote"))) and rng.random() < 0.45
+            poison_candidates = [x for x in ctx.get("poison_options", candidates) if x != killed]
             poison = rng.choice(poison_candidates) if ctx.get("poison") and poison_candidates and rng.random() < 0.18 else None
+            if save and not ctx.get("can_use_both", True):
+                poison = None
             data = {"save": save, "poison_target": poison, "reason": "模拟女巫根据局势决定是否用药。"}
         elif action == "wolf_discussion":
             target = min(candidates) if candidates else None
@@ -564,26 +617,20 @@ class LLMRouter:
             if style.get("caution", 0) >= 0.8:
                 data["speech"] += "证据不足，先不下结论。"
             data["speech"] = data["speech"][:int(style.get("length", 120))]
-        if action in {"vote", "wolf_kill", "seer_inspect", "witch"} and isinstance(ctx.get("decision"), dict):
-            data = copy.deepcopy(ctx["decision"])
-        elif action == "speech" and ctx.get("expression_plan", {}).get("targets"):
-            target = ctx["expression_plan"]["targets"][0]
-            points = "；".join(ctx["expression_plan"].get("points", [])[:2])
-            data = {"speech": f"我先观察{target}号。{points}请说明你的判断依据，这些线索不能直接确认身份。"[:int(ctx.get("style", {}).get("length", 120))]}
         if error:
             data["fallback_error"] = error[:180]
         return LLMResult(data, "mock", "rule-based-mock", json.dumps(data, ensure_ascii=False))
 
     async def speech_stream(self, provider: str, system: str, user: str, ctx: dict[str, Any]):
         """Route native SSE without exposing reasoning or repeating an interrupted answer."""
-        requested = self.registry.resolve(provider)
+        requested, candidates, bound, route_reason = self._route_candidates(provider, ctx, "stream")
         started = time.monotonic()
         chain: list[str] = []
         reason = None
         denied = False
-        candidates = self.registry.candidates(requested, "stream")
+        reason = route_reason
         if not candidates and not requested.startswith("mock:"):
-            reason = "no_configured_healthy_models"
+            reason = reason or "no_configured_healthy_models"
         for entry in candidates:
             for attempt in range(self.retries+1):
                 chain.append(entry.key)
@@ -605,6 +652,7 @@ class LLMRouter:
                         async with aclosing(self.adapters[entry.provider].stream(system, user)) as native:
                             while True:
                                 selection = self._selection.set(entry)
+                                credential_token = self._credential.set(bound)
                                 usage_token = self._usage.set(usage)
                                 try:
                                     chunk = await anext(native)
@@ -612,7 +660,10 @@ class LLMRouter:
                                     break
                                 finally:
                                     self._selection.reset(selection)
+                                    self._credential.reset(credential_token)
                                     self._usage.reset(usage_token)
+                                if bound and not self.credentials.route_valid(bound.owner_id, bound.id, bound.revision, scope_id=bound.scope_id):
+                                    raise ValueError("Credential changed during request")
                                 if not chunk:
                                     continue
                                 if not isinstance(chunk, str):
@@ -661,31 +712,19 @@ class LLMRouter:
                 self.activity[entry.provider]["fallbacks"] += 1
         self._publish_execution(requested, "mock:rule-based-mock", chain, reason,
                                 "budget_exhausted" if denied else "mock_fallback" if not requested.startswith("mock:") else "practice", started)
-        text = self._mock(ctx).data["speech"]
+        text = self._mock(ctx, error=(reason or "model_unavailable") if not requested.startswith("mock:") else None).data["speech"]
         for offset in range(0, len(text), 6):
             yield text[offset:offset+6]
             await asyncio.sleep(float(os.getenv("AI_CHUNK_DELAY", "0.09")))
 
     async def _native_speech(self, provider: str, system: str, user: str):
-        if provider == "openai":
-            url = "https://api.openai.com/v1/responses"
-            headers = {"Authorization": f"Bearer {os.environ['OPENAI_API_KEY']}"}
-            payload = {"model": self._model(provider), "instructions": system, "input": user, "stream": True, "max_output_tokens": 300}
-        elif provider == "anthropic":
-            url = "https://api.anthropic.com/v1/messages"
-            headers = {"x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}
-            payload = {"model": self._model(provider), "system": system, "messages": [{"role": "user", "content": user}], "stream": True, "max_tokens": 300}
-        elif provider == "dashscope":
-            url = self.dashscope_url + "/chat/completions"
-            headers = {"Authorization": f"Bearer {os.environ['DASHSCOPE_API_KEY']}"}
-            payload = {"model": self._model(provider), "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-                       "stream": True, "stream_options": {"include_usage": True}, "max_tokens": 350, "enable_thinking": False}
-        else:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{self._model(provider)}:streamGenerateContent?alt=sse"
-            headers = {"x-goog-api-key": os.environ["GEMINI_API_KEY"]}
-            payload = {"systemInstruction": {"parts": [{"text": system}]}, "contents": [{"role": "user", "parts": [{"text": user}]}], "generationConfig": {"maxOutputTokens": 300}}
-        client = self.client
-        async with client.stream("POST", url, headers=headers, json=payload) as response:
+        credential = self._connection(provider)
+        address = await check_public_endpoint(credential.base_url)
+        url, headers, payload = provider_request(credential, self._model(provider), system, user,
+                                                stream=True, max_tokens=350, parameters=self._scope.get().get("model_parameters") or self._scope.get().get("model_options"))
+        url, headers, extensions = pin_request(url, headers, address)
+        redactor = SecretStreamFilter(credential.secret)
+        async with self.client.stream("POST", url, headers=headers, json=payload, follow_redirects=False, extensions=extensions) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():
                 if not line.startswith("data:"):
@@ -700,20 +739,29 @@ class LLMRouter:
                     self._capture_usage(body.get("response", {}), provider)
                 else:
                     self._capture_usage(body, provider)
-                if body.get("type") == "error" or "error" in body:
+                if body.get("type") == "error" or "error" in body or body.get("code"):
                     raise ValueError("Provider stream error")
+                pieces = []
                 if provider == "openai" and body.get("type") == "response.output_text.delta":
-                    yield body.get("delta", "")
+                    pieces.append(body.get("delta", ""))
                 elif provider == "anthropic" and body.get("type") == "content_block_delta" and body.get("delta", {}).get("type") == "text_delta":
-                    yield body["delta"].get("text", "")
+                    pieces.append(body["delta"].get("text", ""))
                 elif provider == "gemini":
                     for candidate in body.get("candidates", []):
                         for part in candidate.get("content", {}).get("parts", []):
                             if not part.get("thought") and part.get("text"):
-                                yield part["text"]
-                elif provider == "dashscope":
-                    for choice in body.get("choices", []):
-                        # Qwen reasoning_content is never a public speech chunk.
-                        content = choice.get("delta", {}).get("content")
+                                pieces.append(part["text"])
+                elif provider in {"dashscope", "openai-compatible"}:
+                    for choice in body.get("output", body).get("choices", []):
+                        content = choice.get("delta", choice.get("message", {})).get("content")
                         if isinstance(content, str) and content:
-                            yield content
+                            pieces.append(content)
+                for piece in pieces:
+                    if not isinstance(piece, str):
+                        raise ValueError("Invalid public provider delta")
+                    public = redactor.feed(piece)
+                    if public:
+                        yield public
+            remaining = redactor.finish()
+            if remaining:
+                yield remaining

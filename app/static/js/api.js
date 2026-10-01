@@ -28,3 +28,15 @@ runtime.sessionAPI={
  rotate:()=>api('/api/session/rotate','POST'),
  revoke:()=>api('/api/session/revoke','POST')
 };
+
+const credentialScope=()=>store.roomId?`?scope_id=${encodeURIComponent(store.roomId)}`:'';
+runtime.credentialsAPI={
+ list:()=>api('/api/credentials'+credentialScope()),
+ create:body=>api('/api/credentials','POST',body),
+ update:(id,body)=>api(`/api/credentials/${encodeURIComponent(id)}`+credentialScope(),'PUT',body),
+ test:(id,body={})=>api(`/api/credentials/${encodeURIComponent(id)}/test`+credentialScope(),'POST',body),
+ models:id=>api(`/api/credentials/${encodeURIComponent(id)}/models`+credentialScope(),'POST',{}),
+ remove:id=>api(`/api/credentials/${encodeURIComponent(id)}`+credentialScope(),'DELETE')
+};
+runtime.roomAPI.analysis=(id,gameId)=>api(`/api/rooms/${id}/analysis${gameId?'?game_id='+encodeURIComponent(gameId):''}`);
+runtime.roomAPI.games=id=>api(`/api/rooms/${id}/games`);

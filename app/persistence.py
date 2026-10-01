@@ -40,6 +40,7 @@ class Store:
         CREATE TABLE IF NOT EXISTS player_memory (room_id TEXT NOT NULL, game_id TEXT NOT NULL, player_id INTEGER NOT NULL, memory TEXT NOT NULL, PRIMARY KEY(room_id,game_id,player_id));
         CREATE TABLE IF NOT EXISTS room_statistics (room_id TEXT PRIMARY KEY, statistics TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS model_telemetry (record_id TEXT PRIMARY KEY, room_id TEXT, game_id TEXT, kind TEXT NOT NULL, record TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS completed_games (room_id TEXT NOT NULL, game_id TEXT NOT NULL, state TEXT NOT NULL, finished_at REAL NOT NULL, PRIMARY KEY(room_id,game_id));
         CREATE TABLE IF NOT EXISTS usage_state (id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL);
         ''')
         columns = {row[1] for row in self.db.execute("PRAGMA table_info(identities)")}
@@ -114,6 +115,8 @@ class Store:
             g.archived_at = time.time()
         with self.db:
             self.db.execute("INSERT OR REPLACE INTO rooms VALUES (?, ?, ?)", (g.room_id, json.dumps(g.dump(), ensure_ascii=False), time.time()))
+            if g.game_over:
+                self.db.execute("INSERT OR REPLACE INTO completed_games VALUES (?,?,?,?)", (g.room_id, g.game_id, json.dumps(g.dump(), ensure_ascii=False), g.finished_at or time.time()))
             for event in events or []:
                 self.db.execute("INSERT OR IGNORE INTO room_events VALUES(?,?,?,?,?,?)", (g.room_id, event["event_id"], event["game_id"], event["audience"], event.get("player_id"), json.dumps(event, ensure_ascii=False)))
             for player in g.players:
@@ -182,7 +185,7 @@ class Store:
                 # Only anonymous aggregates survive: no title, nicknames, IDs, chat or roles.
                 stats = {"days": data.get("day", 1), "winner": data.get("winner"), "human_count": sum(bool(p.get("owner_id")) for p in data["players"]), "purged_at": now}
                 self.db.execute("INSERT OR REPLACE INTO room_statistics VALUES(?,?)", (rid, json.dumps(stats)))
-                for table in ("room_events", "player_memory", "model_telemetry", "rooms"):
+                for table in ("room_events", "player_memory", "model_telemetry", "completed_games", "rooms"):
                     self.db.execute(f"DELETE FROM {table} WHERE room_id=?", (rid,))
                 purged.append(rid)
             # Private skill/AI memory of archived rooms shares exactly this retention.
@@ -205,6 +208,20 @@ class Store:
         for kind, record in self.db.execute("SELECT kind,record FROM model_telemetry WHERE room_id=? AND game_id=? ORDER BY rowid", (room_id, game_id)):
             result["calls" if kind == "call" else "outcomes"].append(json.loads(record))
         return result
+
+    @synchronized
+    def completed_game(self, room_id: str, game_id: str) -> WerewolfGame | None:
+        row = self.db.execute("SELECT state FROM completed_games WHERE room_id=? AND game_id=?", (room_id, game_id)).fetchone()
+        return WerewolfGame.restore(json.loads(row[0])) if row else None
+
+    @synchronized
+    def completed_list(self, room_id: str) -> list[dict[str, Any]]:
+        return [{"game_id": game_id, "finished_at": finished, "winner": json.loads(state).get("winner")}
+                for game_id, finished, state in self.db.execute("SELECT game_id,finished_at,state FROM completed_games WHERE room_id=? ORDER BY finished_at DESC", (room_id,))]
+
+    @synchronized
+    def public_replay(self, room_id: str, game_id: str) -> list[dict[str, Any]]:
+        return [json.loads(row[0]) for row in self.db.execute("SELECT event FROM room_events WHERE room_id=? AND game_id=? AND audience='public' ORDER BY rowid", (room_id, game_id))]
 
     @synchronized
     def cleanup_expired_sessions(self, *, now: float) -> int:

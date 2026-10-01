@@ -1,0 +1,45 @@
+name: V3 regression
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install -r requirements-dev.txt
+      - run: python -m compileall -q app tests
+      - name: JavaScript syntax
+        run: |
+          for file in app/static/app.js app/static/js/*.js; do
+            node --input-type=module --check < "$file"
+          done
+          node --check app/static/sw.js
+      - run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - run: python -m playwright install --with-deps chromium
+      - name: Browser and server smoke
+        env:
+          DATABASE_PATH: /tmp/werewolf-ci.sqlite
+          GAME_TIME_SCALE: '0.12'
+          AI_TURN_PAUSE: '0.01'
+          AI_CHUNK_DELAY: '0.001'
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/werewolf-ci.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          python tests/wait_for_server.py
+          python tests/browser_v3.py
+      - name: Docker build and import smoke
+        run: |
+          docker build -t ai-werewolf-ci .
+          docker run --rm ai-werewolf-ci python tests/container_smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification
+          path: test-artifacts/

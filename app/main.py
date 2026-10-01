@@ -10,10 +10,12 @@ from dotenv import load_dotenv
 from anyio import CancelScope
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .game import PERSONALITIES
+from .game import PERSONALITIES, GAME_MODES
+from .credentials import CredentialService
 from .llm import LLMRouter
 from .limits import RateLimitError
 from .persistence import Store
@@ -32,6 +34,8 @@ async def lifespan(app: FastAPI):
     lock_file = RuntimeLock(db_path + ".lock")
     store = Store(db_path)
     router = LLMRouter()
+    credentials = CredentialService(db_path + ".credentials.sqlite3")
+    router.credentials = credentials
     scale = float(os.getenv("GAME_TIME_SCALE", "1"))
     if scale <= 0: raise RuntimeError("GAME_TIME_SCALE must be positive")
     manager = RoomManager(store, router, time_scale=scale, ai_pause=max(0, float(os.getenv("AI_TURN_PAUSE", "1.5"))))
@@ -41,11 +45,19 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await manager.close()
+        credentials.close()
         store.close()
         lock_file.close()
 
 
-app = FastAPI(title="AI Werewolf", version="2.3.1", lifespan=lifespan)
+app = FastAPI(title="AI Werewolf Arena", version="3.0.0", lifespan=lifespan)
+@app.exception_handler(RequestValidationError)
+async def invalid_request(request: Request, exc: RequestValidationError):
+    # Pydantic's default errors include the submitted input, including API keys.
+    errors = [{"type": error["type"], "loc": error["loc"], "msg": error["msg"]} for error in exc.errors()]
+    return JSONResponse(status_code=422, content={"detail": errors})
+
+
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -81,29 +93,36 @@ class CommandRequest(BaseModel):
 
 class RoomRequest(CommandRequest):
     name: str = Field(default="玩家", min_length=1, max_length=24)
-    seat: int = Field(default=1, ge=1, le=6)
+    seat: int | None = Field(default=None, ge=1, le=16)
     title: str = Field(default="月下狼人杀", min_length=1, max_length=40)
     pace: Literal["fast", "standard", "slow"] = "standard"
+    mode: Literal["quick6", "standard9", "standard12", "custom"] = "quick6"
+    player_count: int | None = Field(default=None, ge=4, le=16)
+    roles: list[str] | None = Field(default=None, min_length=4, max_length=16)
 
 
 class JoinRequest(CommandRequest):
     password: str = Field(default="", max_length=64)
     name: str = Field(default="玩家", min_length=1, max_length=24)
-    seat: int = Field(default=1, ge=1, le=6)
+    seat: int | None = Field(default=None, ge=1, le=16)
 
 
 class ConfigureRequest(CommandRequest):
     pace: Literal["fast", "standard", "slow"] = "standard"
-    seats: list[dict[str, Any]] = Field(default_factory=list, max_length=6)
+    seats: list[dict[str, Any]] = Field(default_factory=list, max_length=16)
     unique_model_per_ai_seat: bool = Field(default=True, strict=True)
+    mode: Literal["quick6", "standard9", "standard12", "custom"] | None = None
+    player_count: int | None = Field(default=None, ge=4, le=16)
+    roles: list[str] | None = Field(default=None, min_length=4, max_length=16)
 
 
 class ActionRequest(CommandRequest):
     game_id: str = Field(max_length=64)
     turn_sequence: int
-    action: Literal["speech", "vote", "wolf_kill", "seer_inspect", "witch"]
+    action: Literal["speech", "vote", "wolf_kill", "seer_inspect", "witch", "wolf_discuss", "guard_protect", "wolf_beauty_charm", "hunter_shoot", "wolf_king_shoot", "duel", "self_destruct"]
     target: int | None = Field(default=None, strict=True)
     speech: str = Field(default="", max_length=500)
+    text: str = Field(default="", max_length=500)
     save: bool = Field(default=False, strict=True)
     poison_target: int | None = Field(default=None, strict=True)
 
@@ -165,7 +184,10 @@ async def rooms(identity: str = Depends(owner)):
 
 @app.post("/api/rooms")
 async def create_room(req: RoomRequest, identity: str = Depends(owner)):
-    return await manager().create(identity, req.name, req.seat, req.title, req.pace, req.action_id)
+    try:
+        return await manager().create(identity, req.name, req.seat, req.title, req.pace, req.action_id, mode=req.mode, player_count=req.player_count, roles=req.roles)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 @app.post("/api/rooms/{room_id}/join")
@@ -257,7 +279,132 @@ async def legacy_reveal():
 
 @app.get("/api/health")
 async def health():
-    return {"ok": True, "version": "2.3.1", "providers": manager().router.status(), "model_registry": manager().router.model_status(), "storage": "sqlite", "personalities": PERSONALITIES}
+    return {"ok": True, "version": "3.0.0", "providers": manager().router.status(), "model_registry": manager().router.model_status(), "storage": "sqlite", "personalities": PERSONALITIES, "game_modes": GAME_MODES}
+
+
+@app.get("/api/models")
+async def platform_models(identity: str = Depends(owner)):
+    return {"models": manager().router.model_status()}
+
+
+@app.post("/api/models/refresh")
+async def platform_models_refresh(identity: str = Depends(owner)):
+    await asyncio.to_thread(manager().limits.check, "model_test", "platform-catalog")
+    discovery = await manager().router.refresh_platform_models()
+    return {"models": manager().router.model_status(), "providers": discovery}
+
+
+class CredentialRequest(BaseModel):
+    provider: Literal["openai", "anthropic", "gemini", "dashscope", "openai-compatible"]
+    api_key: str = Field(min_length=1, max_length=4096, repr=False)
+    base_url: str | None = Field(default=None, max_length=2048)
+    temporary: bool = False
+    scope_id: str | None = Field(default=None, max_length=100)
+
+
+class ReplaceCredentialRequest(BaseModel):
+    api_key: str = Field(min_length=1, max_length=4096, repr=False)
+    base_url: str | None = Field(default=None, max_length=2048)
+
+
+def credential_error(exc: Exception) -> HTTPException:
+    # Credential operations use curated error strings, never provider bodies.
+    if isinstance(exc, PermissionError):
+        return HTTPException(403, "无法访问此凭据")
+    return HTTPException(getattr(exc, "status_code", 400), str(exc))
+
+
+@app.get("/api/credentials")
+async def credentials_list(scope_id: str | None = None, identity: str = Depends(owner)):
+    return {"credentials": await asyncio.to_thread(manager().router.credentials.list, identity, scope_id=scope_id)}
+
+
+@app.post("/api/credentials")
+async def credentials_create(req: CredentialRequest, identity: str = Depends(owner)):
+    await asyncio.to_thread(manager().limits.check, "action", "credential:" + identity)
+    try:
+        return await asyncio.to_thread(manager().router.credentials.create, identity, req.provider, req.api_key,
+                                       base_url=req.base_url, temporary=req.temporary, scope_id=req.scope_id or ("session:" + identity if req.temporary else None))
+    except (ValueError, PermissionError) as exc:
+        raise credential_error(exc) from exc
+
+
+@app.get("/api/credentials/{credential_id}")
+async def credentials_get(credential_id: str, scope_id: str | None = None, identity: str = Depends(owner)):
+    try:
+        return await asyncio.to_thread(manager().router.credentials.get, identity, credential_id, scope_id=scope_id)
+    except (ValueError, PermissionError) as exc:
+        raise credential_error(exc) from exc
+
+
+@app.put("/api/credentials/{credential_id}")
+async def credentials_replace(credential_id: str, req: ReplaceCredentialRequest, scope_id: str | None = None, identity: str = Depends(owner)):
+    try:
+        result = await asyncio.to_thread(manager().router.credentials.replace, identity, credential_id, req.api_key,
+                                         base_url=req.base_url, scope_id=scope_id)
+        manager().invalidate_credential(identity, credential_id)
+        return result
+    except (ValueError, PermissionError) as exc:
+        raise credential_error(exc) from exc
+
+
+@app.delete("/api/credentials/{credential_id}")
+async def credentials_delete(credential_id: str, scope_id: str | None = None, identity: str = Depends(owner)):
+    try:
+        await asyncio.to_thread(manager().router.credentials.delete, identity, credential_id, scope_id=scope_id)
+        manager().invalidate_credential(identity, credential_id)
+        return {"deleted": True}
+    except (ValueError, PermissionError) as exc:
+        raise credential_error(exc) from exc
+
+
+@app.post("/api/credentials/{credential_id}/models")
+async def credentials_discover(credential_id: str, scope_id: str | None = None, identity: str = Depends(owner)):
+    await asyncio.to_thread(manager().limits.check, "model_test", "credential:" + identity)
+    try:
+        return await manager().router.credentials.discover(identity, credential_id, scope_id=scope_id)
+    except (ValueError, PermissionError) as exc:
+        raise credential_error(exc) from exc
+
+
+class CredentialTestRequest(BaseModel):
+    model_id: str | None = Field(default=None, max_length=200)
+
+
+@app.post("/api/credentials/{credential_id}/test")
+async def credentials_test(credential_id: str, req: CredentialTestRequest = CredentialTestRequest(), scope_id: str | None = None, identity: str = Depends(owner)):
+    await asyncio.to_thread(manager().limits.check, "model_test", "credential:" + identity)
+    try:
+        return await manager().router.credentials.test(identity, credential_id, scope_id=scope_id, model_id=req.model_id)
+    except (ValueError, PermissionError) as exc:
+        raise credential_error(exc) from exc
+
+
+@app.get("/api/rooms/{room_id}/analysis")
+async def analysis(room_id: str, game_id: str | None = None, identity: str = Depends(owner)):
+    try:
+        return await manager().analysis(room_id, identity, game_id)
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/rooms/{room_id}/replay")
+async def replay(room_id: str, game_id: str | None = None, identity: str = Depends(owner)):
+    report = await analysis(room_id, game_id, identity)
+    return {key: report[key] for key in ("game_id", "winner", "events")}
+
+
+@app.get("/api/rooms/{room_id}/games")
+async def games(room_id: str, identity: str = Depends(owner)):
+    try:
+        await manager().require_async(room_id, identity)
+        return {"games": await manager().store.call("completed_list", room_id)}
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
 
 
 @app.websocket("/ws/{room_id}")
@@ -351,6 +498,11 @@ async def recovery_code(identity: str = Depends(owner)):
 @app.post("/api/session/revoke")
 async def revoke(identity: str = Depends(owner)):
     await manager().store.call("revoke", identity)
+    manager().router.credentials.clear_scope("session:" + identity)
+    for room in manager().rooms.values():
+        for player in room.game.players:
+            if getattr(player, "credential_owner_id", None) == identity and getattr(player, "credential_id", None):
+                manager().invalidate_credential(identity, player.credential_id)
     manager().disconnect_identity(identity)
     return {"revoked": True}
 
@@ -364,7 +516,16 @@ class PasswordRequest(CommandRequest):
 
 
 class SeatRequest(CommandRequest):
-    seat: int = Field(ge=1, le=6)
+    seat: int = Field(ge=1, le=16)
+
+
+class ChangeSeatRequest(CommandRequest):
+    seat: int | None = Field(default=None, ge=1, le=16)
+
+
+@app.post("/api/rooms/{room_id}/seat")
+async def change_seat(room_id: str, req: ChangeSeatRequest, identity: str = Depends(owner)):
+    return await command(room_id, identity, "seat", req.model_dump(exclude_none=True))
 
 
 @app.post("/api/rooms/{room_id}/lock")

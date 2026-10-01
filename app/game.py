@@ -7,23 +7,27 @@ import secrets
 import time
 import os
 from typing import Any
+from .roles import GAME_MODES, ROLE_DEFINITIONS, validate_mode
 
-ROLE_NAMES = {"wolf": "狼人", "seer": "预言家", "witch": "女巫", "villager": "村民"}
+ROLE_NAMES = {key: role.display_name for key, role in ROLE_DEFINITIONS.items()}
 PERSONALITIES = {
     "detective": {"name": "逻辑侦探", "prompt": "重视证据、票型和时间线，区分事实与猜测。", "aggression": 0.4, "caution": 0.7, "logic": 0.9, "deception": 0.3, "length": 100, "social": "理性"},
-    "hunter": {"name": "激进猎手", "prompt": "主动追问、明确提出怀疑，但不要把猜测说成已知身份。", "aggression": 0.9, "caution": 0.3, "logic": 0.6, "deception": 0.3, "length": 80, "social": "直接"},
-    "trickster": {"name": "欺诈大师", "prompt": "重视心理博弈。狼人可伪装，好人应通过追问试探，禁止捏造系统查验。", "aggression": 0.5, "caution": 0.5, "logic": 0.6, "deception": 0.9, "length": 100, "social": "试探"},
+    "hunter": {"name": "激进猎手", "prompt": "主动追问、表达鲜明判断；风格由你决定，允许游戏内试探和身份宣称。", "aggression": 0.9, "caution": 0.3, "logic": 0.6, "deception": 0.3, "length": 80, "social": "直接"},
+    "trickster": {"name": "欺诈大师", "prompt": "重视心理博弈，可以伪装身份、诈查验、试探和改变立场，由你自主选择策略。", "aggression": 0.5, "caution": 0.5, "logic": 0.6, "deception": 0.9, "length": 100, "social": "试探"},
     "cautious": {"name": "谨慎型", "prompt": "保持谨慎，标注证据不足，优先提出可验证的问题。", "aggression": 0.2, "caution": 0.95, "logic": 0.8, "deception": 0.2, "length": 90, "social": "温和"},
     "performer": {"name": "表演型", "prompt": "表达有情绪和临场感，发言自然，但不泄露内部分析过程。", "aggression": 0.6, "caution": 0.4, "logic": 0.5, "deception": 0.6, "length": 120, "social": "活泼"},
     "commander": {"name": "指挥官", "prompt": "整理局势，提出清晰的下一步行动和追问建议。", "aggression": 0.6, "caution": 0.6, "logic": 0.8, "deception": 0.4, "length": 120, "social": "组织"},
 }
-PROVIDERS = {"openai", "anthropic", "gemini", "dashscope", "mock", "auto"}
+PROVIDERS = {"openai", "anthropic", "gemini", "dashscope", "mock", "auto", "openai-compatible", "openai_compatible"}
 TIMINGS = {
     "fast": {"night_discussion": 15, "night_wolves": 15, "night_seer": 15, "night_witch": 15, "day_speech": 15, "last_words": 20, "day_vote": 15},
     "standard": {"night_discussion": 30, "night_wolves": 15, "night_seer": 15, "night_witch": 15, "day_speech": 30, "last_words": 20, "day_vote": 15},
     "slow": {"night_discussion": 45, "night_wolves": 20, "night_seer": 20, "night_witch": 20, "day_speech": 60, "last_words": 30, "day_vote": 25},
 }
 PHASE_NAMES = {"lobby": "等待玩家", "night_discussion": "狼人讨论", "night_wolves": "狼人最终选择", "night_seer": "预言家查验", "night_witch": "女巫用药", "day_speech": "依次发言", "day_vote": "投票放逐", "last_words": "遗言", "finished": "游戏结束"}
+PHASE_NAMES.update(night_guard="守卫守护", night_beauty="狼美人魅惑", death_skill="死亡技能")
+for timing in TIMINGS.values():
+    timing.update(night_guard=timing["night_seer"], night_beauty=timing["night_seer"], death_skill=timing["last_words"])
 
 
 @dataclass
@@ -46,6 +50,11 @@ class Player:
     execution_status: dict[str, Any] = field(default_factory=dict)
     wolf_visible_until: int | None = None
     wolf_teammates_at_death: list[dict[str, Any]] = field(default_factory=list)
+    role_state: dict[str, Any] = field(default_factory=dict)
+    credential_id: str | None = None
+    credential_owner_id: str | None = None
+    model_id: str = ""
+    model_options: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.voice_profile:
@@ -116,6 +125,31 @@ class WerewolfGame:
     locked: bool = False
     password_hash: str = ""
     blocked_owners: dict[str, int] = field(default_factory=dict)
+    mode: str = "quick6"
+    player_count: int = 6
+    role_roster: list[str] = field(default_factory=list)
+    night_guards: dict[str, int | None] = field(default_factory=dict)
+    night_saved: list[int] = field(default_factory=list)
+    night_poisons: list[int] = field(default_factory=list)
+    death_skill_queue: list[dict[str, Any]] = field(default_factory=list)
+    death_context: dict[str, Any] = field(default_factory=dict)
+    death_skill_action: str | None = None
+    resume_phase: str | None = None
+    resume_player_id: int | None = None
+    action_history: list[dict[str, Any]] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        # Modes are validated on construction and when lobby configuration changes.
+        count = self.player_count if self.mode == "custom" else None
+        self.mode, self.player_count, self.role_roster = validate_mode(self.mode, count, self.role_roster or None)
+
+    def wolf_actors(self) -> list[Player]:
+        regular = [p for p in self.alive_players() if ROLE_DEFINITIONS[p.role].participates_in_kill]
+        return regular or [p for p in self.alive_players() if p.role == "hidden_wolf"]
+
+    def in_wolf_channel(self, p: Player) -> bool:
+        return ROLE_DEFINITIONS[p.role].wolf_channel or (p.role == "hidden_wolf" and not any(
+            ROLE_DEFINITIONS[q.role].participates_in_kill for q in self.alive_players()))
 
     @property
     def turn_id(self) -> str:

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ai-werewolf-v2
+    name: ai-werewolf-v3
     runtime: python
     plan: starter
     buildCommand: pip install -r requirements.txt
