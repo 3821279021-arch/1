@@ -1,4 +1,4 @@
-name: Sync Qwen tokenizer vocabulary
+name: Sync Qwen tokenizer assets
 on:
   push:
     paths:
@@ -12,18 +12,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download verified Qwen vocabulary
+      - name: Download verified Qwen tokenizer assets
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p app/tokenizers
           curl -fsSL https://raw.githubusercontent.com/jsntcheng/QwQ-32B/main/vocab.json -o app/tokenizers/qwen2-vocab.json
           echo "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910  app/tokenizers/qwen2-vocab.json" | sha256sum -c -
-      - name: Commit vocabulary
+          curl -fsSL https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/resolve/main/LICENSE -o app/tokenizers/LICENSE-QWEN.txt
+          echo "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e  app/tokenizers/LICENSE-QWEN.txt" | sha256sum -c -
+      - name: Commit tokenizer assets
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/tokenizers/qwen2-vocab.json
-          git diff --cached --quiet || git commit -m "Add Qwen tokenizer vocabulary for v2.3.1"
+          git add app/tokenizers/qwen2-vocab.json app/tokenizers/LICENSE-QWEN.txt
+          git diff --cached --quiet || git commit -m "Sync Qwen tokenizer assets for v2.3.1"
           git push
