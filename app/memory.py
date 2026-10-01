@@ -179,6 +179,15 @@ def _contradiction(memory: dict[str, Any], pid: int, day: int, summary: str,
                                     "kind": "stance_change" if change_only else "inconsistent_claim"})
 
 
+def _quoted_claim(text: str, start: int) -> bool:
+    prefix = re.split(r"[。；！？\n]", text[:start])[-1]
+    # Repeating or questioning another player's report is not a new claim by
+    # this speaker. The complete utterance remains in the public event layer.
+    reported = re.search(r"[1-6]号(?:曾|刚才|之前|上轮|今天|昨夜)?(?:自称|声称|说|称|报|提到|表示)", prefix)
+    subject = re.fullmatch(r"\s*(?:昨天|昨晚|昨夜|今天|此前|上轮|请|追问|询问|问)?[1-6]号[，,：:]?\s*", prefix)
+    return bool(reported or subject)
+
+
 def _speech(memory: dict[str, Any], text: str, pid: int | None, self_pid: int, day: int,
             event_id: str, visibility: str) -> None:
     if pid is None:
@@ -201,6 +210,8 @@ def _speech(memory: dict[str, Any], text: str, pid: int | None, self_pid: int, d
     # Explicit first-person declarations only. "2号像预言家" is not a claim by
     # the speaker to hold that role, and "我不是预言家" must not become one.
     for match in re.finditer(r"(?:我(?:是|就是|自称|这(?:张)?(?:牌)?是)|我的身份(?:是|为))\s*(?:个|一名|一张)?(预言家|女巫|村民|狼人)", text):
+        if _quoted_claim(text, match.start()):
+            continue
         role = ROLE_WORDS[match.group(1)]
         previous = next((c for c in reversed(memory["claims"]) if c["player_id"] == pid), None)
         if previous is None:
@@ -215,16 +226,27 @@ def _speech(memory: dict[str, Any], text: str, pid: int | None, self_pid: int, d
             _contradiction(memory, pid, day, f"{pid}号身份声称由{previous['claimed_role']}变为{role}，需追问原因。",
                            previous["event_id"], event_id, visibility=visibility)
     check_patterns = (
-        (r"(?:查杀|查验|验了|验出|查了|验)([1-6])号(?:[^。；，]{0,10}?(?:是|为)?(狼人|好人|金水))?", None),
+        (r"(?:查杀|查验(?:了|过)?|验了|验出|查了|验)([1-6])号(?:[^。；，]{0,10}?(?:是|为)?(狼人|好人|金水))?", None),
         (r"([1-6])号(?:是|为|给了我|给)?(?:我的)?(查杀|金水)", None),
         (r"(?:给|发)([1-6])号(?:一张|个)?(查杀|金水)", None),
     )
     extracted: set[tuple[int, str]] = set()
     for pattern, _ in check_patterns:
         for match in re.finditer(pattern, text):
+            if _quoted_claim(text, match.start()):
+                continue
             target = int(match.group(1))
             wording = match.group(2) if len(match.groups()) > 1 else None
-            result = "wolf" if wording in {"狼人", "查杀"} or match.group(0).startswith("查杀") else \
+            after_target = text[match.start():].split("号", 1)[-1][:24]
+            clauses = re.split(r"[。，,；！？\n]", after_target)
+            after_target = clauses[0]
+            if len(clauses) > 1 and re.match(r"\s*(?:他|此人|结果)", clauses[1]):
+                after_target += clauses[1]
+            after_target = re.split(r"[1-6]号", after_target)[0]
+            negated_wolf = bool(re.search(r"(?:不是|并非|非)(?:狼人|狼)(?![坑队])", after_target))
+            explicit_wolf = bool(re.search(r"(?:是|为)(?:狼人|狼)(?![坑队])", after_target))
+            result = "good" if negated_wolf else \
+                     "wolf" if wording in {"狼人", "查杀"} or match.group(0).startswith("查杀") or explicit_wolf else \
                      "good" if wording in {"好人", "金水"} else "unreported"
             if (target, result) in extracted:
                 continue

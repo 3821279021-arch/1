@@ -16,6 +16,7 @@ class GameBeliefState:
     evidence: dict[int, list[str]] = field(default_factory=dict)
     strategy_plan: str = ""
     wolf_plan: dict[str, Any] | None = None
+    own_checks: list[dict[str, Any]] = field(default_factory=list)
 
     @classmethod
     def from_view(cls, view: dict[str, Any], memory: dict[str, Any]):
@@ -77,6 +78,10 @@ class GameBeliefState:
             if pid in ids and belief.get("confirmed"):
                 state.alignment_probabilities[pid] = 0.99 if belief["role_guess"] == "wolf" else 0.01
                 state.evidence[pid] = ["自己的已确认查验（私有信息）。"]
+                if view["self"].get("role_key") == "seer":
+                    state.own_checks.append({"player_id": pid,
+                        "alignment": "wolf" if belief["role_guess"] == "wolf" else "good",
+                        "source_event_id": belief.get("basis_event_id"), "confirmed": True})
         if view["self"].get("role_key") == "wolf":
             teammates = {me, *(p["id"] for p in view.get("wolf_teammates", []))}
             for pid in teammates & set(ids):
@@ -128,11 +133,13 @@ class GameBeliefState:
     def speech_plan(self, me: int, alive: list[int]) -> dict[str, Any]:
         options = [pid for pid in alive if pid != me and self.relationships.get(pid) != "狼队"]
         target = max(options, key=lambda pid: (self.alignment_probabilities.get(pid, 0.33), -pid)) if options else None
-        # Public expression points must not contain own checks or wolf knowledge.
+        # General public points exclude private information. The seer's own
+        # results are disclosed through a separate, verified speech prefix.
         points = [point for point in self.evidence.get(target, []) if "私有" not in point]
         return {"stance": "suspect" if points else "observe", "targets": [target] if target else [],
                 "confidence": min(0.75, self.alignment_probabilities.get(target, 0.33)),
-                "intent": "ask_evidence", "points": points or ["目前公开证据不足，先追问判断依据。"]}
+                "intent": "ask_evidence", "own_checks": self.own_checks,
+                "points": points or ["目前公开证据不足，先追问判断依据。"]}
 
     def dump(self):
         return asdict(self)

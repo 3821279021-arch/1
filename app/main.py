@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
         lock_file.close()
 
 
-app = FastAPI(title="AI Werewolf", version="2.3.0", lifespan=lifespan)
+app = FastAPI(title="AI Werewolf", version="2.3.1", lifespan=lifespan)
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -257,7 +257,7 @@ async def legacy_reveal():
 
 @app.get("/api/health")
 async def health():
-    return {"ok": True, "version": "2.3.0", "providers": manager().router.status(), "model_registry": manager().router.model_status(), "storage": "sqlite", "personalities": PERSONALITIES}
+    return {"ok": True, "version": "2.3.1", "providers": manager().router.status(), "model_registry": manager().router.model_status(), "storage": "sqlite", "personalities": PERSONALITIES}
 
 
 @app.websocket("/ws/{room_id}")

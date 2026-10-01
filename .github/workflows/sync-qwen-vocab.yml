@@ -1,0 +1,29 @@
+name: Sync Qwen tokenizer vocabulary
+on:
+  push:
+    paths:
+      - 'app/tokens.py'
+      - '.github/workflows/sync-qwen-vocab.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download verified Qwen vocabulary
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app/tokenizers
+          curl -fsSL https://raw.githubusercontent.com/jsntcheng/QwQ-32B/main/vocab.json -o app/tokenizers/qwen2-vocab.json
+          echo "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910  app/tokenizers/qwen2-vocab.json" | sha256sum -c -
+      - name: Commit vocabulary
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/tokenizers/qwen2-vocab.json
+          git diff --cached --quiet || git commit -m "Add Qwen tokenizer vocabulary for v2.3.1"
+          git push

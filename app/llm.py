@@ -244,9 +244,10 @@ class LLMRouter:
     async def _before_call(self, entry: ModelEntry, requested: str, ctx: dict[str, Any], system: str, user: str, stream: bool):
         scope = self._scope.get()
         meta = {key: scope.get(key) or ctx.get(key) for key in ("room_id", "game_id", "agent_id", "day", "phase", "request_id")}
-        base = await asyncio.to_thread(lambda: 24 + estimate_tokens(entry.provider, entry.model, system) + estimate_tokens(entry.provider, entry.model, user))
+        overhead = (19 if entry.model.startswith("qwen-turbo") else 15) if entry.provider == "dashscope" and entry.model.startswith("qwen") else 24
+        base = await asyncio.to_thread(lambda: overhead + estimate_tokens(entry.provider, entry.model, system) + estimate_tokens(entry.provider, entry.model, user))
         schema = action_schema(ctx.get("action", ""), ctx.get("options", [])) if not stream else None
-        if schema:
+        if schema and entry.provider != "dashscope":
             base += estimate_tokens(entry.provider, entry.model, json.dumps(schema, ensure_ascii=False))
         samples = self.calibration.get(entry.key, [])
         coefficient = max(0.6, min(1.6, median(samples))) if len(samples) >= 3 else 1.0

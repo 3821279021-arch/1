@@ -1,4 +1,4 @@
-const CACHE='ai-werewolf-shell-v23-modules';
+const CACHE='ai-werewolf-shell-v231-modules';
 const SHELL=['/','/static/app.css','/static/app.js','/static/js/socket.js','/static/js/ui.js','/static/js/events.js','/static/js/lobby.js','/static/js/audio.js','/static/js/game.js','/static/js/store.js','/static/js/main.js','/static/js/pet.js','/static/js/api.js','/static/js/pwa.js','/manifest.webmanifest','/static/icon-192.png','/static/icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('ai-werewolf-shell-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
