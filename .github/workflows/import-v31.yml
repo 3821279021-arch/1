@@ -26,7 +26,7 @@ jobs:
           mkdir -p /tmp/v31
           unzip -q /tmp/v31.zip -d /tmp/v31
           test "$(cat /tmp/v31/ai-werewolf/VERSION)" = "3.1.0"
-          rsync -a --delete --exclude='.git/' /tmp/v31/ai-werewolf/ ./
+          rsync -a --delete --exclude='.git/' --exclude='.github/workflows/' /tmp/v31/ai-werewolf/ ./
       - name: Commit V3.1 replacement
         shell: bash
         run: |
