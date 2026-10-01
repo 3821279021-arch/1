@@ -1,8 +1,9 @@
 """V3 checks strategy autonomy separately from legality and information scope."""
+
 import asyncio
-from copy import deepcopy
 import json
 import unittest
+from copy import deepcopy
 from unittest.mock import patch
 
 from app.ai import AIOrchestrator, normalize_action
@@ -11,14 +12,29 @@ from app.memory import new_memory, update_memory
 
 
 def view(role="villager", count=12, action="vote"):
-    return {"room_id": "test-room", "game_id": "test-game", "turn_id": "test-turn", "turn_sequence": 3,
-            "day": 1, "phase": "day_vote", "game_over": False, "player_count": count, "mode": "standard12",
-            "role_roster": ["wolf"] * 4 + ["seer", "witch", "hunter", "guard"] + ["villager"] * 4,
-            "rules": "狼人达到人数优势获胜；守卫不能连续守同一目标。",
-            "self": {"id": 1, "role": role, "role_key": role, "alive": True, "private_notes": [], "role_state": {}},
-            "players": [{"id": i, "alive": True, "role": role if i == 1 else None} for i in range(1, count + 1)],
-            "events": [], "pending_action": {"type": action, "options": list(range(2, count + 1)),
-                "game_id": "test-game", "turn_id": "test-turn", "turn_sequence": 3}}
+    return {
+        "room_id": "test-room",
+        "game_id": "test-game",
+        "turn_id": "test-turn",
+        "turn_sequence": 3,
+        "day": 1,
+        "phase": "day_vote",
+        "game_over": False,
+        "player_count": count,
+        "mode": "standard12",
+        "role_roster": ["wolf"] * 4 + ["seer", "witch", "hunter", "guard"] + ["villager"] * 4,
+        "rules": "狼人达到人数优势获胜；守卫不能连续守同一目标。",
+        "self": {"id": 1, "role": role, "role_key": role, "alive": True, "private_notes": [], "role_state": {}},
+        "players": [{"id": i, "alive": True, "role": role if i == 1 else None} for i in range(1, count + 1)],
+        "events": [],
+        "pending_action": {
+            "type": action,
+            "options": list(range(2, count + 1)),
+            "game_id": "test-game",
+            "turn_id": "test-turn",
+            "turn_sequence": 3,
+        },
+    }
 
 
 class Model:
@@ -73,8 +89,18 @@ class AutonomousModels(unittest.IsolatedAsyncioTestCase):
         scoped = view(role="seer", action="speech")
         scoped["phase"] = "day_speech"
         scoped["self"]["private_notes"] = ["第1夜查验：12号是狼人。"]
-        memory = update_memory(new_memory(), {"type": "private_note", "event_id": "my-check", "day": 1,
-            "audience": "player", "player_id": 1, "data": {"note": scoped["self"]["private_notes"][0]}}, 1)
+        memory = update_memory(
+            new_memory(),
+            {
+                "type": "private_note",
+                "event_id": "my-check",
+                "day": 1,
+                "audience": "player",
+                "player_id": 1,
+                "data": {"note": scoped["self"]["private_notes"][0]},
+            },
+            1,
+        )
         model = Model(chunks=["我是村民，12号是我的金水。"])
         output = "".join([chunk async for chunk in AIOrchestrator(model).speak(scoped, "real", "detective", memory)])
         self.assertEqual(output, "我是村民，12号是我的金水。")
@@ -86,17 +112,29 @@ class AutonomousModels(unittest.IsolatedAsyncioTestCase):
         scoped["wolf_teammates"] = [{"id": 9, "alive": True}]
         scoped["wolf_chat"] = [{"player_id": 9, "text": "队内约定：明天9号跳预言家。"}]
         model = Model(chunks=["我支持9号预言家。"])
-        output = "".join([chunk async for chunk in AIOrchestrator(model).speak(scoped, "real", "detective", new_memory())])
+        output = "".join(
+            [chunk async for chunk in AIOrchestrator(model).speak(scoped, "real", "detective", new_memory())]
+        )
         self.assertEqual(output, "我支持9号预言家。")
         self.assertIn("队内约定", model.calls[0][1])
 
     def test_prompt_contains_history_without_server_guesses_or_credentials(self):
         scoped = view()
-        scoped["self"].update(credential_id="credential-reference", encrypted_secret="secret-key", model_id="secret-model")
+        scoped["self"].update(
+            credential_id="credential-reference", encrypted_secret="secret-key", model_id="secret-model"
+        )
         scoped["seat_presets"] = {"2": {"credential_id": "another-reference"}}
         scoped["pet"] = {"private_chat_history": ["another-owner-secret"]}
-        memory = update_memory(new_memory(), {"type": "speech", "event_id": "claim", "audience": "public",
-            "data": {"player_id": 11, "speech": "我是守卫，怀疑12号。"}}, 1)
+        memory = update_memory(
+            new_memory(),
+            {
+                "type": "speech",
+                "event_id": "claim",
+                "audience": "public",
+                "data": {"player_id": 11, "speech": "我是守卫，怀疑12号。"},
+            },
+            1,
+        )
         before_view, before_memory = deepcopy(scoped), deepcopy(memory)
         system, user, metadata = AIOrchestrator(Model()).context(scoped, "detective", memory)
         payload = json.loads(user)
@@ -105,7 +143,13 @@ class AutonomousModels(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("suspicions", payload["memory"])
         self.assertNotIn("semantic_hints", payload["memory"])
         self.assertFalse(payload["memory"]["beliefs"])
-        for secret in ("credential-reference", "secret-key", "secret-model", "another-reference", "another-owner-secret"):
+        for secret in (
+            "credential-reference",
+            "secret-key",
+            "secret-model",
+            "another-reference",
+            "another-owner-secret",
+        ):
             self.assertNotIn(secret, system + user)
         self.assertEqual(metadata["_model_route"]["model_id"], "secret-model")
         self.assertEqual((scoped, memory), (before_view, before_memory))
@@ -125,7 +169,10 @@ class AutonomousModels(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(normalize_action("unknown_future_role", {"action": {"target": 12}}), {"target": 12})
 
     async def test_invalid_final_output_and_timeout_have_neutral_traced_fallback(self):
-        for reply, reason in [({"target": 99}, "invalid_output_after_router_retries"), (TimeoutError(), "TimeoutError")]:
+        for reply, reason in [
+            ({"target": 99}, "invalid_output_after_router_retries"),
+            (TimeoutError(), "TimeoutError"),
+        ]:
             model, scoped = Model([reply]), view()
             ai = AIOrchestrator(model)
             proposal = await ai.propose(scoped, "real", "detective", new_memory())
@@ -137,8 +184,13 @@ class AutonomousModels(unittest.IsolatedAsyncioTestCase):
     async def test_real_router_failure_cannot_turn_practice_strategy_into_a_vote(self):
         class FailedModel(Model):
             async def ask_json(self, *args, **kwargs):
-                return LLMResult({"target": 12}, "mock (fallback from real)", "rule-based-mock",
-                    routing={"status": "mock_fallback", "failure_reason": "credential_unavailable"})
+                return LLMResult(
+                    {"target": 12},
+                    "mock (fallback from real)",
+                    "rule-based-mock",
+                    routing={"status": "mock_fallback", "failure_reason": "credential_unavailable"},
+                )
+
         ai = AIOrchestrator(FailedModel())
         command = await ai.propose(view(), "real", "detective", new_memory())
         self.assertIsNone(command["target"])
@@ -154,9 +206,13 @@ class AutonomousModels(unittest.IsolatedAsyncioTestCase):
 
     def test_foreign_private_and_wolf_memory_cannot_enter_good_player_prompt(self):
         scoped, memory = view(), new_memory()
-        memory["facts"] = [{"text": "foreign-private-sentinel", "source_player_id": 2, "visibility": "private", "confirmed": True},
-                           {"text": "wolf-team-sentinel", "source_player_id": 2, "visibility": "wolves", "confirmed": False}]
-        memory["summary"]["confirmed_facts"] = [{"text": "foreign-summary-sentinel", "source_player_id": 3, "visibility": "private", "confirmed": True}]
+        memory["facts"] = [
+            {"text": "foreign-private-sentinel", "source_player_id": 2, "visibility": "private", "confirmed": True},
+            {"text": "wolf-team-sentinel", "source_player_id": 2, "visibility": "wolves", "confirmed": False},
+        ]
+        memory["summary"]["confirmed_facts"] = [
+            {"text": "foreign-summary-sentinel", "source_player_id": 3, "visibility": "private", "confirmed": True}
+        ]
         _, user, _ = AIOrchestrator(Model()).context(scoped, "detective", memory)
         for sentinel in ("foreign-private-sentinel", "wolf-team-sentinel", "foreign-summary-sentinel"):
             self.assertNotIn(sentinel, user)
@@ -166,6 +222,7 @@ class AutonomousModels(unittest.IsolatedAsyncioTestCase):
         from app.rules import RuleEngine
         from app.scope import InformationScope
         from app.tokens import estimate_tokens
+
         game = WerewolfGame("budget", "owner", mode="standard12")
         engine = RuleEngine(game)
         engine.join("owner", "测试", 1)
@@ -175,8 +232,18 @@ class AutonomousModels(unittest.IsolatedAsyncioTestCase):
         for pid in range(2, 13):
             note = f"第{pid}夜查验：{pid}号是好人。"
             scoped["self"]["private_notes"].append(note)
-            memory = update_memory(memory, {"type": "private_note", "event_id": f"check:{pid}", "day": pid,
-                "audience": "player", "player_id": 1, "data": {"note": note}}, 1)
+            memory = update_memory(
+                memory,
+                {
+                    "type": "private_note",
+                    "event_id": f"check:{pid}",
+                    "day": pid,
+                    "audience": "player",
+                    "player_id": 1,
+                    "data": {"note": note},
+                },
+                1,
+            )
         before = deepcopy(memory)
         with patch.dict("os.environ", {"AI_PROMPT_TOKEN_LIMIT": "1800"}):
             system, user, _ = AIOrchestrator(Model()).context(scoped, "detective", memory)
@@ -195,7 +262,9 @@ class AutonomousModels(unittest.IsolatedAsyncioTestCase):
     async def test_secondary_skill_is_optional_and_fully_model_chosen(self):
         scoped = view(role="knight", action="speech")
         scoped["secondary_actions"] = [{"type": "duel", "options": [10, 12]}]
-        ai = AIOrchestrator(Model([{"action": None, "target": None}, {"action": "duel", "target": 12}, {"action": "duel", "target": 9}]))
+        ai = AIOrchestrator(
+            Model([{"action": None, "target": None}, {"action": "duel", "target": 12}, {"action": "duel", "target": 9}])
+        )
         self.assertIsNone(await ai.choose_secondary(scoped, "real", "detective", new_memory()))
         command = await ai.choose_secondary(scoped, "real", "detective", new_memory())
         self.assertEqual(command["target"], 12)
@@ -207,16 +276,34 @@ class AutonomousModels(unittest.IsolatedAsyncioTestCase):
         class Cancelled(Model):
             async def ask_json(self, *args, **kwargs):
                 raise asyncio.CancelledError()
+
         with self.assertRaises(asyncio.CancelledError):
             await AIOrchestrator(Cancelled()).propose(view(), "real", "detective", new_memory())
 
     def test_multiple_digit_claims_and_private_checks_remain_distinct(self):
-        memory = update_memory(new_memory(), {"type": "speech", "event_id": "claim12", "audience": "public",
-            "data": {"player_id": 11, "speech": "我是预言家，查杀12号。"}}, 1)
+        memory = update_memory(
+            new_memory(),
+            {
+                "type": "speech",
+                "event_id": "claim12",
+                "audience": "public",
+                "data": {"player_id": 11, "speech": "我是预言家，查杀12号。"},
+            },
+            1,
+        )
         self.assertEqual(memory["check_claims"][0]["target_player_id"], 12)
         self.assertFalse(memory["check_claims"][0]["confirmed"])
-        memory = update_memory(memory, {"type": "private_note", "event_id": "check12", "audience": "player",
-            "player_id": 1, "data": {"note": "查验：12号是好人。"}}, 1)
+        memory = update_memory(
+            memory,
+            {
+                "type": "private_note",
+                "event_id": "check12",
+                "audience": "player",
+                "player_id": 1,
+                "data": {"note": "查验：12号是好人。"},
+            },
+            1,
+        )
         self.assertTrue(next(item for item in memory["beliefs"] if item["player_id"] == 12)["confirmed"])
         self.assertFalse(any(item["player_id"] == 2 for item in memory["beliefs"]))
 

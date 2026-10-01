@@ -6,6 +6,7 @@ reservation rather than allowing a caller to bypass its game or daily budget.
 Only identifiers and accounting totals are stored; prompts and credentials never
 belong in this module.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -80,8 +81,13 @@ ENV_NAMES = {
 
 def _empty_usage() -> dict[str, Any]:
     return {
-        "requests": 0, "tokens": 0, "input_tokens": 0, "output_tokens": 0,
-        "estimated_cost": 0.0, "reserved_tokens": 0, "reserved_cost": 0.0,
+        "requests": 0,
+        "tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "estimated_cost": 0.0,
+        "reserved_tokens": 0,
+        "reserved_cost": 0.0,
         "last_blocked": None,
     }
 
@@ -153,7 +159,9 @@ class Limits:
             self._save()
 
     def _day(self, timestamp: float | None = None) -> str:
-        return datetime.fromtimestamp(self.clock() if timestamp is None else timestamp, timezone.utc).strftime("%Y-%m-%d")
+        return datetime.fromtimestamp(self.clock() if timestamp is None else timestamp, timezone.utc).strftime(
+            "%Y-%m-%d"
+        )
 
     def _save(self) -> None:
         if self.persist and self._storage_ok:
@@ -173,8 +181,10 @@ class Limits:
             "room": ("room_per_hour", 3600),
             "pet": ("pet_per_minute", 60),
             "room_ai": ("room_ai_per_minute", 60),
-            **{name: (name + "_per_minute", 60) for name in
-               ("join", "chat", "action", "reconnect", "model_test", "recovery")},
+            **{
+                name: (name + "_per_minute", 60)
+                for name in ("join", "chat", "action", "reconnect", "model_test", "recovery")
+            },
         }
         if kind not in specs:
             raise ValueError("Unknown rate-limit category")
@@ -263,12 +273,18 @@ class Limits:
                 self._blocked(game, day, "room_ai_rate")
             ticket_id = uuid.uuid4().hex
             ticket = {
-                "game_key": game_key, "day_key": day_key, "room_id": room_id,
-                "game_id": game_id, "agent_id": str(meta.get("agent_id") or ""),
+                "game_key": game_key,
+                "day_key": day_key,
+                "room_id": room_id,
+                "game_id": game_id,
+                "agent_id": str(meta.get("agent_id") or ""),
                 "category": str(meta.get("category") or "unknown"),
-                "provider": str(meta.get("provider") or ""), "model_key": model_key,
-                "input_tokens": input_tokens, "output_tokens": output_tokens,
-                "tokens": tokens, "cost": cost,
+                "provider": str(meta.get("provider") or ""),
+                "model_key": model_key,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "tokens": tokens,
+                "cost": cost,
                 "input_price": self._price(model_key)[0],
                 "output_price": self._price(model_key)[1],
             }
@@ -291,8 +307,11 @@ class Limits:
             return ticket_id
 
     def _settle(self, ticket: dict[str, Any], input_tokens: int, output_tokens: int) -> None:
-        cost = ((input_tokens * ticket["input_price"] + output_tokens * ticket["output_price"]) / 1_000_000
-                if "input_price" in ticket else self._cost(ticket["model_key"], input_tokens, output_tokens))
+        cost = (
+            (input_tokens * ticket["input_price"] + output_tokens * ticket["output_price"]) / 1_000_000
+            if "input_price" in ticket
+            else self._cost(ticket["model_key"], input_tokens, output_tokens)
+        )
         game = self._state["games"].setdefault(ticket["game_key"], _empty_usage())
         day = self._state["days"].setdefault(ticket["day_key"], _empty_usage())
         for bucket in (game, day):
@@ -327,7 +346,11 @@ class Limits:
                     total = max(0, int(total))
                     if input_tokens is None and output_tokens is None:
                         # A total alone is charged at the more expensive direction.
-                        in_price, out_price = (ticket["input_price"], ticket["output_price"]) if "input_price" in ticket else self._price(ticket["model_key"])
+                        in_price, out_price = (
+                            (ticket["input_price"], ticket["output_price"])
+                            if "input_price" in ticket
+                            else self._price(ticket["model_key"])
+                        )
                         input_tokens, output_tokens = (total, 0) if in_price >= out_price else (0, total)
                     elif input_tokens is None:
                         input_tokens = max(0, total - int(output_tokens))
@@ -358,9 +381,15 @@ class Limits:
                 reason = "game_token_budget"
             elif day["tokens"] + day["reserved_tokens"] >= self.config["daily_token_budget"]:
                 reason = "daily_token_budget"
-            elif self.config["game_cost_budget"] > 0 and game["estimated_cost"] + game["reserved_cost"] >= self.config["game_cost_budget"]:
+            elif (
+                self.config["game_cost_budget"] > 0
+                and game["estimated_cost"] + game["reserved_cost"] >= self.config["game_cost_budget"]
+            ):
                 reason = "game_cost_budget"
-            elif self.config["daily_cost_budget"] > 0 and day["estimated_cost"] + day["reserved_cost"] >= self.config["daily_cost_budget"]:
+            elif (
+                self.config["daily_cost_budget"] > 0
+                and day["estimated_cost"] + day["reserved_cost"] >= self.config["daily_cost_budget"]
+            ):
                 reason = "daily_cost_budget"
             else:
                 rate_key = "room_ai:" + hashlib.sha256(str(room_id).encode()).hexdigest()
@@ -369,8 +398,20 @@ class Limits:
                 if self.config["room_ai_per_minute"] and active >= self.config["room_ai_per_minute"]:
                     reason = "room_ai_rate"
             return {
-                "game": game, "daily": day, "daily_date": self._day(),
-                "limits": {k: self.config[k] for k in ("game_max_requests", "game_token_budget", "game_cost_budget", "daily_token_budget", "daily_cost_budget", "max_active_rooms")},
+                "game": game,
+                "daily": day,
+                "daily_date": self._day(),
+                "limits": {
+                    k: self.config[k]
+                    for k in (
+                        "game_max_requests",
+                        "game_token_budget",
+                        "game_cost_budget",
+                        "daily_token_budget",
+                        "daily_cost_budget",
+                        "max_active_rooms",
+                    )
+                },
                 "real_calls_allowed": reason is None,
                 "fallback_reason": reason or game["last_blocked"] or day["last_blocked"],
             }

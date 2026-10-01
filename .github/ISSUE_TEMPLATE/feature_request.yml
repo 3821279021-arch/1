@@ -1,0 +1,17 @@
+name: Feature request
+description: Propose a product, engine or research feature
+title: "[Feature] "
+body:
+  - type: textarea
+    attributes:
+      label: Problem
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Acceptance criteria

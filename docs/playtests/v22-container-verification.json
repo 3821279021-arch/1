@@ -1,0 +1,9 @@
+{
+  "health_status": 200,
+  "version": "2.2.0",
+  "image_has_no_configured_keys": true,
+  "restart_restored_game_id": true,
+  "restart_restored_session": true,
+  "restart_preserved_deadline": true,
+  "state_revision": 20
+}

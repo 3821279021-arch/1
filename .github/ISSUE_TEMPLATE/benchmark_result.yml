@@ -1,0 +1,32 @@
+name: Benchmark result
+description: Share a reproducible experiment result
+title: "[Benchmark] "
+body:
+  - type: input
+    attributes:
+      label: App version / commit
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Experiment seed
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Models / providers
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Ruleset / board
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Artifact / manifest

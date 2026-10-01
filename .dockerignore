@@ -20,3 +20,8 @@ test-artifacts
 *.key
 .env.*
 !.env.example
+artifacts
+dist
+.coverage*
+.mypy_cache
+.ruff_cache

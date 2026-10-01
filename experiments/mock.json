@@ -1,0 +1,13 @@
+{
+  "name": "paired-mock-smoke",
+  "games": 4,
+  "seed": 20261001,
+  "seat_policy": "rotate",
+  "paired_seeds": true,
+  "ruleset": {"mode": "quick6"},
+  "agents": [
+    {"id": "A", "provider": "mock", "model": "mock", "personality": "detective"},
+    {"id": "B", "provider": "mock", "model": "mock", "personality": "hunter"}
+  ],
+  "limits": {"max_concurrency": 1, "max_retries": 0, "max_total_tokens": 1000000}
+}

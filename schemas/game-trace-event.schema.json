@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-werewolf/game-trace-event.schema.json",
+  "title": "AI Werewolf Game Trace Event",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "game_id",
+    "seq",
+    "timestamp",
+    "type",
+    "audience",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "experiment_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "game_id": {
+      "type": "string"
+    },
+    "game_seed": {
+      "type": [
+        "integer",
+        "string",
+        "null"
+      ]
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "type": {
+      "type": "string"
+    },
+    "audience": {
+      "type": "string",
+      "enum": [
+        "public",
+        "player",
+        "wolves",
+        "system",
+        "research_private"
+      ]
+    },
+    "player_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

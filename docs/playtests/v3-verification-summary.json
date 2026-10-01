@@ -1,0 +1,33 @@
+{
+  "version": "3.0.0",
+  "validation_date": "2026-10-01",
+  "backend": {
+    "tests": 189,
+    "passed": 189,
+    "elapsed_seconds": 52.926
+  },
+  "latest_api_regression": {
+    "tests": 8,
+    "passed": 8,
+    "elapsed_seconds": 10.711
+  },
+  "browser": {
+    "checks": 77,
+    "page_errors": []
+  },
+  "random_rules": {
+    "games": 40,
+    "legal_actions": 4487,
+    "all_completed": true
+  },
+  "container": {
+    "version": "3.0.0",
+    "asgi_health": true,
+    "sqlite_room_creation": true,
+    "session_recovery_and_revocation": true
+  },
+  "limitations": [
+    "No valid external provider API keys supplied; provider protocols validated with mock HTTP.",
+    "Physical phone speaker and iOS/Safari audio not tested on hardware."
+  ]
+}

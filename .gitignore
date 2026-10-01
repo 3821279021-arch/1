@@ -18,3 +18,10 @@ test-artifacts/
 *.key
 .env.*
 !.env.example
+
+# Experiments may contain private role assignments and transcripts.
+artifacts/
+dist/
+.coverage*
+.mypy_cache/
+.ruff_cache/

@@ -1,0 +1,34 @@
+{
+  "version": "2.3.1",
+  "verified_at": "2026-10-01T09:22:02.104994+00:00",
+  "models": [
+    "qwen-plus",
+    "qwen-turbo",
+    "qwen-max",
+    "qwen-flash",
+    "qwen3-max"
+  ],
+  "all_live_http_model_requests": 234,
+  "all_live_reported_usage_tokens": 875630,
+  "billing_note": "Provider usage, not currency or billed price. Injected primary timeouts never sent HTTP and are excluded.",
+  "completed_games": 5,
+  "full_game_model_requests": 176,
+  "full_game_successes": 176,
+  "full_game_failures": 0,
+  "full_game_mock_fallbacks": 0,
+  "full_game_cancelled": 0,
+  "full_game_usage_tokens": 686182,
+  "final_full_game_requests": 29,
+  "final_speech_repairs": {
+    "filtered_sentences": 1,
+    "safe_replacements": 0
+  },
+  "real_backup_completions_after_injected_primary_timeouts": 3,
+  "final_token_samples": 15,
+  "final_token_median_error": 0.1500999999999999,
+  "final_token_max_error": 0.1501999999999999,
+  "final_token_raw_median_error": 0.0,
+  "real_browser_pet_replies": 2,
+  "credential_absent_from_browser": true,
+  "credentials_included": false
+}

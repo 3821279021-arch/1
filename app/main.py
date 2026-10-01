@@ -1,26 +1,28 @@
 from __future__ import annotations
 
 import asyncio
-from contextlib import asynccontextmanager
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Literal
 
-from dotenv import load_dotenv
 from anyio import CancelScope
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .game import PERSONALITIES, GAME_MODES
 from .credentials import CredentialService
-from .llm import LLMRouter
+from .game import GAME_MODES, PERSONALITIES
 from .limits import RateLimitError
+from .llm import LLMRouter
 from .persistence import Store
 from .rooms import RoomManager
 from .runtime_lock import RuntimeLock
+from .trace import research_export
+from .versions import APP_VERSION
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR.parent / ".env")
@@ -37,7 +39,8 @@ async def lifespan(app: FastAPI):
     credentials = CredentialService(db_path + ".credentials.sqlite3")
     router.credentials = credentials
     scale = float(os.getenv("GAME_TIME_SCALE", "1"))
-    if scale <= 0: raise RuntimeError("GAME_TIME_SCALE must be positive")
+    if scale <= 0:
+        raise RuntimeError("GAME_TIME_SCALE must be positive")
     manager = RoomManager(store, router, time_scale=scale, ai_pause=max(0, float(os.getenv("AI_TURN_PAUSE", "1.5"))))
     app.state.manager = manager
     manager.runner = asyncio.create_task(manager.run())
@@ -50,7 +53,9 @@ async def lifespan(app: FastAPI):
         lock_file.close()
 
 
-app = FastAPI(title="AI Werewolf Arena", version="3.0.0", lifespan=lifespan)
+app = FastAPI(title="AI Werewolf Arena", version=APP_VERSION, lifespan=lifespan)
+
+
 @app.exception_handler(RequestValidationError)
 async def invalid_request(request: Request, exc: RequestValidationError):
     # Pydantic's default errors include the submitted input, including API keys.
@@ -61,7 +66,9 @@ async def invalid_request(request: Request, exc: RequestValidationError):
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
-    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self'"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self'"
+    )
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
@@ -80,7 +87,8 @@ def manager() -> RoomManager:
 async def owner(authorization: str | None = Header(default=None)) -> str:
     token = authorization.removeprefix("Bearer ") if authorization and authorization.startswith("Bearer ") else ""
     identity = await manager().store.call("authenticate", token)
-    if not identity: raise HTTPException(401, "请创建或恢复你的登录会话")
+    if not identity:
+        raise HTTPException(401, "请创建或恢复你的登录会话")
     return identity
 
 
@@ -119,7 +127,20 @@ class ConfigureRequest(CommandRequest):
 class ActionRequest(CommandRequest):
     game_id: str = Field(max_length=64)
     turn_sequence: int
-    action: Literal["speech", "vote", "wolf_kill", "seer_inspect", "witch", "wolf_discuss", "guard_protect", "wolf_beauty_charm", "hunter_shoot", "wolf_king_shoot", "duel", "self_destruct"]
+    action: Literal[
+        "speech",
+        "vote",
+        "wolf_kill",
+        "seer_inspect",
+        "witch",
+        "wolf_discuss",
+        "guard_protect",
+        "wolf_beauty_charm",
+        "hunter_shoot",
+        "wolf_king_shoot",
+        "duel",
+        "self_destruct",
+    ]
     target: int | None = Field(default=None, strict=True)
     speech: str = Field(default="", max_length=500)
     text: str = Field(default="", max_length=500)
@@ -145,13 +166,19 @@ class PetConfigRequest(CommandRequest):
 async def command(room_id: str, identity: str, kind: str, payload: dict[str, Any]):
     try:
         return await manager().command(room_id, identity, kind, payload)
-    except PermissionError as exc: raise HTTPException(403, str(exc)) from exc
-    except ValueError as exc: raise HTTPException(400, str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 @app.exception_handler(RateLimitError)
 async def rate_limited(request: Request, exc: RateLimitError):
-    return JSONResponse(status_code=429, content={"detail": str(exc), "reason": exc.reason}, headers={"Retry-After": str(exc.retry_after)})
+    return JSONResponse(
+        status_code=429,
+        content={"detail": str(exc), "reason": exc.reason},
+        headers={"Retry-After": str(exc.retry_after)},
+    )
 
 
 @app.get("/")
@@ -166,7 +193,9 @@ async def manifest():
 
 @app.get("/sw.js")
 async def service_worker():
-    return FileResponse(BASE_DIR / "static" / "sw.js", media_type="application/javascript", headers={"Cache-Control": "no-cache"})
+    return FileResponse(
+        BASE_DIR / "static" / "sw.js", media_type="application/javascript", headers={"Cache-Control": "no-cache"}
+    )
 
 
 @app.post("/api/session")
@@ -185,7 +214,17 @@ async def rooms(identity: str = Depends(owner)):
 @app.post("/api/rooms")
 async def create_room(req: RoomRequest, identity: str = Depends(owner)):
     try:
-        return await manager().create(identity, req.name, req.seat, req.title, req.pace, req.action_id, mode=req.mode, player_count=req.player_count, roles=req.roles)
+        return await manager().create(
+            identity,
+            req.name,
+            req.seat,
+            req.title,
+            req.pace,
+            req.action_id,
+            mode=req.mode,
+            player_count=req.player_count,
+            roles=req.roles,
+        )
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
@@ -194,8 +233,10 @@ async def create_room(req: RoomRequest, identity: str = Depends(owner)):
 async def join_room(room_id: str, req: JoinRequest, identity: str = Depends(owner)):
     try:
         return await manager().join(room_id, identity, req.name, req.seat, req.password)
-    except ValueError as exc: raise HTTPException(400, str(exc)) from exc
-    except PermissionError as exc: raise HTTPException(403, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
 
 
 @app.get("/api/rooms/{room_id}")
@@ -204,8 +245,10 @@ async def get_room(room_id: str, identity: str = Depends(owner)):
         room = await manager().require_async(room_id, identity)
         async with room.lock:
             return manager().snapshot(room, identity)
-    except PermissionError as exc: raise HTTPException(403, str(exc)) from exc
-    except ValueError as exc: raise HTTPException(404, str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
 
 
 @app.post("/api/rooms/{room_id}/start")
@@ -252,8 +295,10 @@ async def pet_config(room_id: str, req: PetConfigRequest, identity: str = Depend
 async def pet_chat(room_id: str, req: ChatRequest, identity: str = Depends(owner)):
     try:
         return await manager().pet_chat(room_id, identity, req.text, req.client_message_id)
-    except PermissionError as exc: raise HTTPException(403, str(exc)) from exc
-    except ValueError as exc: raise HTTPException(400, str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 @app.get("/api/pet/memory")
@@ -279,7 +324,15 @@ async def legacy_reveal():
 
 @app.get("/api/health")
 async def health():
-    return {"ok": True, "version": "3.0.0", "providers": manager().router.status(), "model_registry": manager().router.model_status(), "storage": "sqlite", "personalities": PERSONALITIES, "game_modes": GAME_MODES}
+    return {
+        "ok": True,
+        "version": APP_VERSION,
+        "providers": manager().router.status(),
+        "model_registry": manager().router.model_status(),
+        "storage": "sqlite",
+        "personalities": PERSONALITIES,
+        "game_modes": GAME_MODES,
+    }
 
 
 @app.get("/api/models")
@@ -323,8 +376,15 @@ async def credentials_list(scope_id: str | None = None, identity: str = Depends(
 async def credentials_create(req: CredentialRequest, identity: str = Depends(owner)):
     await asyncio.to_thread(manager().limits.check, "action", "credential:" + identity)
     try:
-        return await asyncio.to_thread(manager().router.credentials.create, identity, req.provider, req.api_key,
-                                       base_url=req.base_url, temporary=req.temporary, scope_id=req.scope_id or ("session:" + identity if req.temporary else None))
+        return await asyncio.to_thread(
+            manager().router.credentials.create,
+            identity,
+            req.provider,
+            req.api_key,
+            base_url=req.base_url,
+            temporary=req.temporary,
+            scope_id=req.scope_id or ("session:" + identity if req.temporary else None),
+        )
     except (ValueError, PermissionError) as exc:
         raise credential_error(exc) from exc
 
@@ -338,10 +398,18 @@ async def credentials_get(credential_id: str, scope_id: str | None = None, ident
 
 
 @app.put("/api/credentials/{credential_id}")
-async def credentials_replace(credential_id: str, req: ReplaceCredentialRequest, scope_id: str | None = None, identity: str = Depends(owner)):
+async def credentials_replace(
+    credential_id: str, req: ReplaceCredentialRequest, scope_id: str | None = None, identity: str = Depends(owner)
+):
     try:
-        result = await asyncio.to_thread(manager().router.credentials.replace, identity, credential_id, req.api_key,
-                                         base_url=req.base_url, scope_id=scope_id)
+        result = await asyncio.to_thread(
+            manager().router.credentials.replace,
+            identity,
+            credential_id,
+            req.api_key,
+            base_url=req.base_url,
+            scope_id=scope_id,
+        )
         manager().invalidate_credential(identity, credential_id)
         return result
     except (ValueError, PermissionError) as exc:
@@ -372,10 +440,17 @@ class CredentialTestRequest(BaseModel):
 
 
 @app.post("/api/credentials/{credential_id}/test")
-async def credentials_test(credential_id: str, req: CredentialTestRequest = CredentialTestRequest(), scope_id: str | None = None, identity: str = Depends(owner)):
+async def credentials_test(
+    credential_id: str,
+    req: CredentialTestRequest = CredentialTestRequest(),
+    scope_id: str | None = None,
+    identity: str = Depends(owner),
+):
     await asyncio.to_thread(manager().limits.check, "model_test", "credential:" + identity)
     try:
-        return await manager().router.credentials.test(identity, credential_id, scope_id=scope_id, model_id=req.model_id)
+        return await manager().router.credentials.test(
+            identity, credential_id, scope_id=scope_id, model_id=req.model_id
+        )
     except (ValueError, PermissionError) as exc:
         raise credential_error(exc) from exc
 
@@ -407,6 +482,28 @@ async def games(room_id: str, identity: str = Depends(owner)):
         raise HTTPException(404, str(exc)) from exc
 
 
+@app.get("/api/rooms/{room_id}/games/{game_id}/export")
+async def export_game(room_id: str, game_id: str, identity: str = Depends(owner)):
+    # Historical host ownership is independent of current membership/replay.
+    game = await manager().store.call("completed_game", room_id, game_id)
+    if game is None:
+        raise HTTPException(404, "Completed game not found")
+    if game.host_id != identity:
+        raise HTTPException(403, "Research export requires the original host")
+    events = await manager().store.call("research_events", room_id, game_id)
+    telemetry = await manager().store.call("model_report", room_id, game_id)
+    return StreamingResponse(
+        research_export(game, events, telemetry),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/benchmark")
+async def benchmark_page():
+    return FileResponse(Path(__file__).parent / "static" / "benchmark.html")
+
+
 @app.websocket("/ws/{room_id}")
 async def websocket(websocket: WebSocket, room_id: str):
     await websocket.accept()
@@ -421,15 +518,24 @@ async def websocket(websocket: WebSocket, room_id: str):
         if not identity:
             await websocket.close(code=4401)
             return
-        last_event_id = auth.get("last_event_id") if isinstance(auth.get("last_event_id"), str) and len(auth["last_event_id"]) <= 100 else None
+        last_event_id = (
+            auth.get("last_event_id")
+            if isinstance(auth.get("last_event_id"), str) and len(auth["last_event_id"]) <= 100
+            else None
+        )
         connection = await manager().subscribe(room_id, identity, last_event_id)
+
         async def send():
             while True:
                 try:
                     packet = await asyncio.wait_for(connection.queue.get(), timeout=20)
                 except asyncio.TimeoutError:
                     packet = None
-                if not await manager().store.call("authenticate", session_token) or packet and packet["type"] == "session_revoked":
+                if (
+                    not await manager().store.call("authenticate", session_token)
+                    or packet
+                    and packet["type"] == "session_revoked"
+                ):
                     await websocket.close(code=4401)
                     return
                 if packet is None:
@@ -438,6 +544,7 @@ async def websocket(websocket: WebSocket, room_id: str):
                     await websocket.close(code=1013)
                     return
                 await asyncio.wait_for(websocket.send_json(packet), timeout=5)
+
         sender = asyncio.create_task(send())
         # Consume heartbeats and disconnects; gameplay actions use validated HTTP commands.
         while True:
@@ -455,8 +562,10 @@ async def websocket(websocket: WebSocket, room_id: str):
     except RateLimitError:
         await websocket.close(code=4408)
     except (WebSocketDisconnect, asyncio.TimeoutError, ValueError, PermissionError, RuntimeError):
-        try: await websocket.close(code=4403)
-        except RuntimeError: pass
+        try:
+            await websocket.close(code=4403)
+        except RuntimeError:
+            pass
     finally:
         pending = [task for task in (sender, received) if task is not None]
         for task in pending:
@@ -465,7 +574,8 @@ async def websocket(websocket: WebSocket, room_id: str):
             await asyncio.gather(*pending, return_exceptions=True)
         if connection:
             room = manager().rooms.get(room_id)
-            if room: room.connections.discard(connection)
+            if room:
+                room.connections.discard(connection)
 
 
 class RecoveryRequest(BaseModel):
@@ -556,7 +666,11 @@ async def cost_report(room_id: str, identity: str = Depends(owner)):
             raise PermissionError("只有房主可以查看成本报告")
         if room.game.phase != "lobby" and not room.game.game_over:
             # Skill timing and agent IDs in a detailed report can reveal roles.
-            return {"room_id": room_id, "budget": manager().limits.snapshot(room_id, room.game.game_id), "details_available": False}
+            return {
+                "room_id": room_id,
+                "budget": manager().limits.snapshot(room_id, room.game.game_id),
+                "details_available": False,
+            }
         if manager().router._background_writes:
             await asyncio.gather(*manager().router._background_writes, return_exceptions=True)
         stored = await manager().store.call("model_report", room_id, room.game.game_id)

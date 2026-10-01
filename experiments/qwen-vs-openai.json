@@ -1,0 +1,17 @@
+{
+  "name": "qwen-vs-openai",
+  "games": 100,
+  "seed": 20261001,
+  "seat_policy": "rotate",
+  "paired_seeds": true,
+  "ruleset": {"mode": "standard9"},
+  "agents": [
+    {"id": "qwen", "provider": "dashscope", "model": "qwen-plus", "credential_env": "DASHSCOPE_API_KEY", "parameters": {"temperature": 0.7, "enable_thinking": false}},
+    {"id": "openai", "provider": "openai", "model": "gpt-4.1-mini", "credential_env": "OPENAI_API_KEY", "parameters": {"temperature": 0.7}}
+  ],
+  "lineups": [
+    {"id": "qwen-majority", "agents": ["qwen", "openai"]},
+    {"id": "openai-majority", "agents": ["openai", "qwen"]}
+  ],
+  "limits": {"max_concurrency": 1, "max_retries": 1, "max_total_tokens": 1000000, "game_timeout_seconds": 900, "fail_fast": true}
+}

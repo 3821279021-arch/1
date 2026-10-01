@@ -1,4 +1,5 @@
 """A credential-free inventory of precise, independently selectable model IDs."""
+
 from __future__ import annotations
 
 import json
@@ -10,8 +11,10 @@ from typing import Any
 from .credentials import PROVIDERS, validate_model_id
 
 DEFAULT_MODELS = {
-    "openai": "gpt-4.1-mini", "anthropic": "claude-sonnet-4-20250514",
-    "gemini": "gemini-2.5-flash", "dashscope": "qwen-plus",
+    "openai": "gpt-4.1-mini",
+    "anthropic": "claude-sonnet-4-20250514",
+    "gemini": "gemini-2.5-flash",
+    "dashscope": "qwen-plus",
 }
 KEY_NAMES = {provider: f"{provider.upper()}_API_KEY" for provider in DEFAULT_MODELS}
 
@@ -58,10 +61,17 @@ class ModelEntry:
             status = "disabled"
         elif self.configured and not self.public_healthy:
             status = "temporarily_unavailable"
-        return {"key": self.key, "provider": self.provider, "model": self.model,
-                "configured": self.configured, "enabled": self.enabled, "healthy": self.public_healthy,
-                "capabilities": list(self.capabilities), "status": status,
-                "failure_reason": self.public_failure_reason}
+        return {
+            "key": self.key,
+            "provider": self.provider,
+            "model": self.model,
+            "configured": self.configured,
+            "enabled": self.enabled,
+            "healthy": self.public_healthy,
+            "capabilities": list(self.capabilities),
+            "status": status,
+            "failure_reason": self.public_failure_reason,
+        }
 
 
 class ModelRegistry:
@@ -82,19 +92,40 @@ class ModelRegistry:
                     raise ValueError("AI_MODEL_REGISTRY must be a JSON array")
                 entries = [{**entry, "configured": None} for entry in decoded]
         for entry in entries or []:
-            self.register(entry["provider"], entry["model"], configured=entry.get("configured"),
-                          enabled=entry.get("enabled", True), healthy=entry.get("healthy", True),
-                          capabilities=entry.get("capabilities"))
+            self.register(
+                entry["provider"],
+                entry["model"],
+                configured=entry.get("configured"),
+                enabled=entry.get("enabled", True),
+                healthy=entry.get("healthy", True),
+                capabilities=entry.get("capabilities"),
+            )
 
-    def register(self, provider: str, model: str, *, configured: bool | None = None,
-                 enabled: bool = True, healthy: bool = True, capabilities: list[str] | None = None) -> ModelEntry:
+    def register(
+        self,
+        provider: str,
+        model: str,
+        *,
+        configured: bool | None = None,
+        enabled: bool = True,
+        healthy: bool = True,
+        capabilities: list[str] | None = None,
+    ) -> ModelEntry:
         provider = provider.lower()
         if provider not in PROVIDERS or not isinstance(model, str):
             raise ValueError("Unknown provider or invalid actual model ID")
         validate_model_id(model)
         # configured may be overridden in isolated tests; production registration still checks the environment.
-        entry = ModelEntry(provider, model, bool(os.getenv(KEY_NAMES.get(provider, provider.upper().replace("-", "_") + "_API_KEY"))) if configured is None else configured,
-                           enabled, healthy, list(capabilities) if capabilities is not None else ["chat", "json", "stream"])
+        entry = ModelEntry(
+            provider,
+            model,
+            bool(os.getenv(KEY_NAMES.get(provider, provider.upper().replace("-", "_") + "_API_KEY")))
+            if configured is None
+            else configured,
+            enabled,
+            healthy,
+            list(capabilities) if capabilities is not None else ["chat", "json", "stream"],
+        )
         self._entries[entry.key] = entry
         return entry
 
@@ -196,7 +227,9 @@ class ModelRegistry:
             if not remaining and not unique:
                 remaining = list(pool)
             if not remaining:
-                raise ModelAllocationError(f"可用独立模型不足：需要 {len(presets)} 个 AI 座位，当前有 {len(pool)} 个支持 chat/json/stream 的健康真实模型。可切换到明确的兼容复用模式或使用 Mock 练习。")
+                raise ModelAllocationError(
+                    f"可用独立模型不足：需要 {len(presets)} 个 AI 座位，当前有 {len(pool)} 个支持 chat/json/stream 的健康真实模型。可切换到明确的兼容复用模式或使用 Mock 练习。"
+                )
             preferred_key = self.resolve(preferred)
             entry = next((entry for entry in remaining if entry.key == preferred_key), remaining[0])
             assignments[seat] = entry.key

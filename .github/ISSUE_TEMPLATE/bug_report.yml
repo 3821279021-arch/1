@@ -1,0 +1,23 @@
+name: Bug report
+description: Report a reproducible defect
+title: "[Bug] "
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Version / commit
+  - type: input
+    attributes:
+      label: Game seed (if available)
+  - type: textarea
+    attributes:
+      label: Relevant logs (remove API keys)

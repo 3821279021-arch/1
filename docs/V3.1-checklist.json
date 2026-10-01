@@ -1,0 +1,204 @@
+{
+  "version": "3.1.0",
+  "theme": "Reproducible Arena",
+  "items": [
+    {
+      "id": "OSS-001",
+      "priority": "P0",
+      "area": "governance",
+      "requirement": "Project-level LICENSE exists",
+      "done": false,
+      "evidence": "LICENSE-DECISION.md: awaiting explicit owner choice; placeholder is not an open-source license",
+      "status": "awaiting_owner_decision"
+    },
+    {
+      "id": "OSS-002",
+      "priority": "P0",
+      "area": "governance",
+      "requirement": "CONTRIBUTING.md exists",
+      "done": true,
+      "evidence": "CONTRIBUTING.md",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "OSS-003",
+      "priority": "P0",
+      "area": "governance",
+      "requirement": "SECURITY.md exists",
+      "done": true,
+      "evidence": "SECURITY.md; private report channel remains a publication setup item",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "OSS-004",
+      "priority": "P0",
+      "area": "governance",
+      "requirement": "Issue/PR templates exist",
+      "done": true,
+      "evidence": ".github/ISSUE_TEMPLATE + pull_request_template.md",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "ENG-001",
+      "priority": "P0",
+      "area": "quality",
+      "requirement": "Ruff lint and format checks run in CI",
+      "done": true,
+      "evidence": "pyproject.toml + ci.yml; local Ruff check/format passed",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "ENG-002",
+      "priority": "P0",
+      "area": "quality",
+      "requirement": "Type check runs in CI",
+      "done": true,
+      "evidence": "Mypy passed on 15 boundary/arena files",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "ENG-003",
+      "priority": "P0",
+      "area": "quality",
+      "requirement": "Coverage artifact generated",
+      "done": true,
+      "evidence": "coverage XML/HTML artifact",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "ENG-004",
+      "priority": "P0",
+      "area": "security",
+      "requirement": "Dependency audit runs in CI",
+      "done": true,
+      "evidence": "pip-audit: no known vulnerabilities",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "RNG-001",
+      "priority": "P1",
+      "area": "reproducibility",
+      "requirement": "Experiment mode supports explicit game_seed",
+      "done": true,
+      "evidence": "app/rng.py + game.py + tests/test_v31_rng.py",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "RNG-002",
+      "priority": "P1",
+      "area": "reproducibility",
+      "requirement": "Same seed reproduces seats and roles",
+      "done": true,
+      "evidence": "same seed, cross-process derivation, SQLite RNG continuation + offline smoke",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "RNG-003",
+      "priority": "P1",
+      "area": "reproducibility",
+      "requirement": "Normal mode retains secure randomness",
+      "done": true,
+      "evidence": "SystemRandom and experiment-to-normal rematch test",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "TRC-001",
+      "priority": "P1",
+      "area": "trace",
+      "requirement": "Experiment manifest is versioned",
+      "done": true,
+      "evidence": "tools/arena/manifest.py + schema tests",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "TRC-002",
+      "priority": "P1",
+      "area": "trace",
+      "requirement": "Per-game JSONL trace can be exported",
+      "done": true,
+      "evidence": "app/trace.py + research export endpoint + Runner artifacts",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "TRC-003",
+      "priority": "P1",
+      "area": "security",
+      "requirement": "Trace redaction test proves no API keys leak",
+      "done": true,
+      "evidence": "tests/test_v31_trace.py: keys/values, raw output, sessions and private export permissions",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "BAT-001",
+      "priority": "P1",
+      "area": "benchmark",
+      "requirement": "CLI can run N games without browser",
+      "done": true,
+      "evidence": "tools/arena CLI; 100 Mock games complete",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "BAT-002",
+      "priority": "P1",
+      "area": "benchmark",
+      "requirement": "Paired seeds and seat rotation supported",
+      "done": true,
+      "evidence": "paired lineups + rotation tests cover both factions",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "BAT-003",
+      "priority": "P1",
+      "area": "benchmark",
+      "requirement": "Interrupted experiment can resume",
+      "done": true,
+      "evidence": "successful/running/failed/timeout resume tests; attempts retained",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "MET-001",
+      "priority": "P1",
+      "area": "metrics",
+      "requirement": "Summary contains faction/role/seat metrics and N",
+      "done": true,
+      "evidence": "metrics.py JSON/CSV and Benchmark dashboard",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "MET-002",
+      "priority": "P1",
+      "area": "metrics",
+      "requirement": "Summary contains token/cost/latency/fallback metrics",
+      "done": true,
+      "evidence": "model/faction/role/seat resource fields, unknown costs null, latency and fallback",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "MET-003",
+      "priority": "P1",
+      "area": "metrics",
+      "requirement": "Win rates include 95% confidence interval",
+      "done": true,
+      "evidence": "Wilson CI with numerical tests and explicit N",
+      "status": "implemented_and_verified"
+    },
+    {
+      "id": "V32-001",
+      "priority": "P2",
+      "area": "tournament",
+      "requirement": "Round-robin/Swiss/rating planned after reproducible core",
+      "done": true,
+      "evidence": "ROADMAP.md; planned, not implemented",
+      "status": "planned"
+    },
+    {
+      "id": "V4-001",
+      "priority": "P3",
+      "area": "platform",
+      "requirement": "External Agent Protocol and SDK planned",
+      "done": true,
+      "evidence": "ROADMAP.md; planned, not implemented",
+      "status": "planned"
+    }
+  ]
+}

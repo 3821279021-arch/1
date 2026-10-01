@@ -1,0 +1,11 @@
+推荐实际提交顺序：
+
+PR 1  Token estimator + usage telemetry
+PR 2  Memory cap + daily summary + prompt budget
+PR 3  Shared AsyncClient + provider adapter
+PR 4  Structured action output + validation
+PR 5  GameBeliefState + strategy/expression separation
+PR 6  Kick/lock/recovery/revoke + room rate limit
+PR 7  Persistence cleanup + JS module split + CI
+
+原则：每个 PR 都保持现有测试通过，并增加针对新增行为的回归测试。

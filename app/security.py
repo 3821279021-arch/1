@@ -1,4 +1,5 @@
 """Room passwords are salted and never appear in snapshots or logs."""
+
 import hashlib
 import hmac
 import secrets

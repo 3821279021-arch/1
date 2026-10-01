@@ -1,4 +1,5 @@
 """Explainable beliefs and decisions from an actor's InformationScope only."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -32,8 +33,11 @@ class GameBeliefState:
             state.evidence[pid] = []
             state.relationships[pid] = "自己" if pid == me else "待观察"
         summary = memory.get("summary", {})
-        claims = {int(pid): entry["latest"] for pid, entry in summary.get("role_claims", {}).items()
-                  if entry["latest"].get("visibility", "public") == "public"}
+        claims = {
+            int(pid): entry["latest"]
+            for pid, entry in summary.get("role_claims", {}).items()
+            if entry["latest"].get("visibility", "public") == "public"
+        }
         for entry in memory.get("claims", []):
             if entry.get("visibility", "public") == "public":
                 claims[entry["player_id"]] = entry
@@ -54,7 +58,9 @@ class GameBeliefState:
             state.alignment_probabilities[pid] += score * weight
             state.credibility[pid] -= score * weight
             state.claim_consistency[pid] -= score * weight
-            state.evidence[pid].append(entry["summary"] + ("（私有信息）" if entry.get("visibility", "public") != "public" else ""))
+            state.evidence[pid].append(
+                entry["summary"] + ("（私有信息）" if entry.get("visibility", "public") != "public" else "")
+            )
         for entry in memory.get("stances", []):
             pid = entry["target_player_id"]
             if pid in ids:
@@ -63,7 +69,9 @@ class GameBeliefState:
         for entry in memory.get("semantic_hints", []):
             for pid in entry["targets"]:
                 if pid in ids:
-                    state.alignment_probabilities[pid] += 0.02 * entry["confidence"] * 0.65 ** max(0, day-entry["day"])
+                    state.alignment_probabilities[pid] += (
+                        0.02 * entry["confidence"] * 0.65 ** max(0, day - entry["day"])
+                    )
         for entry in memory.get("vote_history", []):
             for actor, target in entry.get("votes", {}).items():
                 if target not in ids:
@@ -79,19 +87,35 @@ class GameBeliefState:
                 state.alignment_probabilities[pid] = 0.99 if belief["role_guess"] == "wolf" else 0.01
                 state.evidence[pid] = ["自己的已确认查验（私有信息）。"]
                 if view["self"].get("role_key") == "seer":
-                    state.own_checks.append({"player_id": pid,
-                        "alignment": "wolf" if belief["role_guess"] == "wolf" else "good",
-                        "source_event_id": belief.get("basis_event_id"), "confirmed": True})
+                    state.own_checks.append(
+                        {
+                            "player_id": pid,
+                            "alignment": "wolf" if belief["role_guess"] == "wolf" else "good",
+                            "source_event_id": belief.get("basis_event_id"),
+                            "confirmed": True,
+                        }
+                    )
         if view["self"].get("role_key") == "wolf":
             teammates = {me, *(p["id"] for p in view.get("wolf_teammates", []))}
             for pid in teammates & set(ids):
                 state.alignment_probabilities[pid] = 1.0
                 state.relationships[pid] = "狼队"
             enemies = [p["id"] for p in view["players"] if p["alive"] and p["id"] not in teammates]
-            target = max(enemies, key=lambda pid: (claims.get(pid, {}).get("claimed_role") == "seer", state.credibility[pid], -pid)) if enemies else None
-            state.wolf_plan = {"kill_target": target, "fake_claim_plan": "避免编造系统查验",
-                               "teammate_distance_strategy": "公开讨论使用公开证据，不暴露队友",
-                               "push_target": min(enemies) if enemies else None, "risk_level": "moderate"}
+            target = (
+                max(
+                    enemies,
+                    key=lambda pid: (claims.get(pid, {}).get("claimed_role") == "seer", state.credibility[pid], -pid),
+                )
+                if enemies
+                else None
+            )
+            state.wolf_plan = {
+                "kill_target": target,
+                "fake_claim_plan": "避免编造系统查验",
+                "teammate_distance_strategy": "公开讨论使用公开证据，不暴露队友",
+                "push_target": min(enemies) if enemies else None,
+                "risk_level": "moderate",
+            }
         for pid in ids:
             probability = round(max(0.01, min(0.99, state.alignment_probabilities[pid])), 3)
             state.alignment_probabilities[pid] = probability
@@ -99,22 +123,28 @@ class GameBeliefState:
             claimed = claims.get(pid, {}).get("claimed_role")
             if claimed in good_weights:
                 good_weights = {role: 0.6 if role == claimed else 0.2 for role in good_weights}
-            state.role_probabilities[pid] = {"wolf": probability,
-                **{role: round((1-probability)*weight, 3) for role, weight in good_weights.items()}}
+            state.role_probabilities[pid] = {
+                "wolf": probability,
+                **{role: round((1 - probability) * weight, 3) for role, weight in good_weights.items()},
+            }
             state.credibility[pid] = round(max(0.05, state.credibility[pid]), 3)
             state.claim_consistency[pid] = round(max(0.05, state.claim_consistency[pid]), 3)
             state.evidence[pid] = state.evidence[pid][-3:]
         own_role = view["self"].get("role_key")
         if own_role in {"wolf", "seer", "witch", "villager"}:
             state.alignment_probabilities[me] = 0.99 if own_role == "wolf" else 0.01
-            state.role_probabilities[me] = {role: float(role == own_role) for role in ("wolf", "seer", "witch", "villager")}
+            state.role_probabilities[me] = {
+                role: float(role == own_role) for role in ("wolf", "seer", "witch", "villager")
+            }
         state.strategy_plan = "优先自己的查验，再核对身份冲突、前后矛盾与公开票型；旧怀疑随天数衰减。"
         return state
 
     def decision(self, action: str, options: list[int], pending: dict[str, Any]) -> dict[str, Any]:
         if action == "witch":
             killed = pending.get("killed")
-            save = bool(pending.get("antidote") and killed is not None and self.alignment_probabilities.get(killed, 0.33) < 0.65)
+            save = bool(
+                pending.get("antidote") and killed is not None and self.alignment_probabilities.get(killed, 0.33) < 0.65
+            )
             poison = max(options, key=lambda pid: self.alignment_probabilities.get(pid, 0.33)) if options else None
             if not pending.get("poison") or poison is None or self.alignment_probabilities.get(poison, 0.33) < 0.85:
                 poison = None
@@ -124,10 +154,15 @@ class GameBeliefState:
         if action == "wolf_kill" and self.wolf_plan:
             target = self.wolf_plan["kill_target"]
         elif action == "seer_inspect":
-            target = min(options, key=lambda pid: (abs(self.alignment_probabilities.get(pid, 0.33)-0.5), pid))
+            target = min(options, key=lambda pid: (abs(self.alignment_probabilities.get(pid, 0.33) - 0.5), pid))
         else:
-            candidates = [pid for pid in options if not self.wolf_plan or self.relationships.get(pid) != "狼队"] or options
-            target = max(candidates, key=lambda pid: (self.alignment_probabilities.get(pid, 0.33), -self.credibility.get(pid, 0.6), -pid))
+            candidates = [
+                pid for pid in options if not self.wolf_plan or self.relationships.get(pid) != "狼队"
+            ] or options
+            target = max(
+                candidates,
+                key=lambda pid: (self.alignment_probabilities.get(pid, 0.33), -self.credibility.get(pid, 0.6), -pid),
+            )
         return {"target": target if target in options else options[0]}
 
     def speech_plan(self, me: int, alive: list[int]) -> dict[str, Any]:
@@ -136,10 +171,14 @@ class GameBeliefState:
         # General public points exclude private information. The seer's own
         # results are disclosed through a separate, verified speech prefix.
         points = [point for point in self.evidence.get(target, []) if "私有" not in point]
-        return {"stance": "suspect" if points else "observe", "targets": [target] if target else [],
-                "confidence": min(0.75, self.alignment_probabilities.get(target, 0.33)),
-                "intent": "ask_evidence", "own_checks": self.own_checks,
-                "points": points or ["目前公开证据不足，先追问判断依据。"]}
+        return {
+            "stance": "suspect" if points else "observe",
+            "targets": [target] if target else [],
+            "confidence": min(0.75, self.alignment_probabilities.get(target, 0.33)),
+            "intent": "ask_evidence",
+            "own_checks": self.own_checks,
+            "points": points or ["目前公开证据不足，先追问判断依据。"],
+        }
 
     def dump(self):
         return asdict(self)

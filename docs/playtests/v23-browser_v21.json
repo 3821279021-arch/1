@@ -1,0 +1,23 @@
+{
+  "browser_errors": [],
+  "widths": [
+    360,
+    390,
+    768,
+    1280
+  ],
+  "event_only_stream": true,
+  "public_and_private_deduplication": true,
+  "optimistic_pet": true,
+  "tts_public_only": true,
+  "tts_seat_profiles": true,
+  "stale_snapshot_rejected": true,
+  "old_game_snapshot_rejected": true,
+  "expired_session_recovery": true,
+  "expired_mutation_not_replayed": true,
+  "action_double_click_requests": 1,
+  "network_retry_reuses_action_id": true,
+  "offline_online_reconnect": true,
+  "wake_lock_release": true,
+  "audibility": "instrumented WebSpeech only; real phone audio requires device validation"
+}

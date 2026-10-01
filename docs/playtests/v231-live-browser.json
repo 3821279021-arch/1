@@ -1,0 +1,96 @@
+{
+  "version": "2.3.1",
+  "browser_errors": [],
+  "mobile_viewport": [
+    390,
+    844
+  ],
+  "real_pet_replies": 2,
+  "execution": {
+    "requested_model": "dashscope:qwen-plus",
+    "model_used": "qwen-plus",
+    "model_key": "dashscope:qwen-plus",
+    "provider_used": "dashscope",
+    "fallback_chain": [
+      "dashscope:qwen-plus"
+    ],
+    "failure_reason": null,
+    "status": "success",
+    "latency": 2.7985,
+    "input_tokens": 1675,
+    "output_tokens": 53,
+    "total_tokens": 1728
+  },
+  "calls": [
+    {
+      "room_id": "2585f741a8",
+      "game_id": "e51028e402701bb68d6bc483",
+      "agent_id": "adade82a679f99c71d7c67d4e04bfa8b",
+      "day": 1,
+      "phase": "lobby",
+      "request_id": "e80985fa-4100-4e07-9996-c63028f537b0",
+      "base_input_tokens": 1313,
+      "calibration_coefficient": 1,
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "requested_model": "dashscope:qwen-plus",
+      "category": "pet_chat",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 1510,
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-plus",
+      "success": true,
+      "latency": 2.7792,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 1313,
+      "output_tokens": 49,
+      "total_tokens": 1362,
+      "latency_ms": 2779,
+      "actual_input_tokens": 1313,
+      "estimated_actual_ratio": 1.15
+    },
+    {
+      "room_id": "2585f741a8",
+      "game_id": "e51028e402701bb68d6bc483",
+      "agent_id": "adade82a679f99c71d7c67d4e04bfa8b",
+      "day": 1,
+      "phase": "lobby",
+      "request_id": "66c528ab-1384-4c65-9d26-78ef48801f34",
+      "base_input_tokens": 1675,
+      "calibration_coefficient": 1,
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "requested_model": "dashscope:qwen-plus",
+      "category": "pet_chat",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 1927,
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-plus",
+      "success": true,
+      "latency": 2.7929,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 1675,
+      "output_tokens": 53,
+      "total_tokens": 1728,
+      "latency_ms": 2793,
+      "actual_input_tokens": 1675,
+      "estimated_actual_ratio": 1.1504
+    }
+  ],
+  "median_estimation_error": 0.1502,
+  "credential_absent_from_browser": true,
+  "pet_replies": [
+    "仅确认一件事：玩家已加入1号座位。游戏尚未开始，当前处于等待玩家阶段（lobby），无任何查验、投票或死亡信息。所有身份与发言均未发生，暂无可验证内容。",
+    "不能。当前仅确认‘玩家加入1号座位’这一事实；无任何查验、死亡或投票发生，所有身份均未公开，也无系统提供信息。任何关于他人身份的说法都属猜测，无证据支持。"
+  ]
+}

@@ -1,0 +1,27 @@
+[
+  {
+    "model": "qwen-plus",
+    "status": 200,
+    "json_valid": true
+  },
+  {
+    "model": "qwen-turbo",
+    "status": 200,
+    "json_valid": true
+  },
+  {
+    "model": "qwen-max",
+    "status": 200,
+    "json_valid": true
+  },
+  {
+    "model": "qwen-flash",
+    "status": 200,
+    "json_valid": true
+  },
+  {
+    "model": "qwen3-max",
+    "status": 200,
+    "json_valid": true
+  }
+]

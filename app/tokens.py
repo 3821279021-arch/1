@@ -4,23 +4,27 @@ OpenAI uses tiktoken; Qwen uses its bundled public vocabulary with the same
 byte-level BPE and splitting pattern as Qwen2/3. Other models use a heuristic.
 Qwen estimation needs no download or provider request at runtime.
 """
+
 from __future__ import annotations
 
-import math
 import json
+import math
 import re
 from functools import lru_cache
 from pathlib import Path
 
 CJK = re.compile(r"[\u3400-\u9fff\uf900-\ufaff\u3000-\u303f\uff00-\uffef]")
 COEFFICIENTS = {"openai": 1.05, "anthropic": 1.15, "gemini": 0.95, "dashscope": 0.95}
-QWEN_PATTERN = r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"
+QWEN_PATTERN = (
+    r"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"
+)
 
 
 @lru_cache(maxsize=1)
 def _qwen_encoding():
     try:
         import tiktoken
+
         vocab = json.loads((Path(__file__).with_name("tokenizers") / "qwen2-vocab.json").read_text())
         # Invert the reversible bytes_to_unicode alphabet used by ByteLevel BPE.
         values = list(range(33, 127)) + list(range(161, 173)) + list(range(174, 256))
@@ -33,8 +37,7 @@ def _qwen_encoding():
                 extra += 1
         alphabet = {chr(codepoint): value for value, codepoint in zip(values, codepoints)}
         ranks = {bytes(alphabet[char] for char in token): rank for token, rank in vocab.items()}
-        return tiktoken.Encoding(name="qwen2-local", pat_str=QWEN_PATTERN,
-                                mergeable_ranks=ranks, special_tokens={})
+        return tiktoken.Encoding(name="qwen2-local", pat_str=QWEN_PATTERN, mergeable_ranks=ranks, special_tokens={})
     except (ImportError, OSError, ValueError, KeyError):
         return None
 
@@ -43,6 +46,7 @@ def _qwen_encoding():
 def _encoding(model: str):
     try:
         import tiktoken
+
         return tiktoken.encoding_for_model(model)
     except Exception:
         return None

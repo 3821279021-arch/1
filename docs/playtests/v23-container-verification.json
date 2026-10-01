@@ -1,0 +1,6 @@
+{
+  "version": "2.3.0",
+  "asgi_health": true,
+  "sqlite_room_creation": true,
+  "session_recovery_and_revocation": true
+}

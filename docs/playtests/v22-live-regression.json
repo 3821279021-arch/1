@@ -1,0 +1,3221 @@
+{
+  "version": "2.2.0",
+  "model": "qwen-plus",
+  "activity": {
+    "requests": 37,
+    "successes": 37,
+    "failures": 0,
+    "fallbacks": 0,
+    "cancelled": 0,
+    "partial_streams": 0,
+    "tokens": 207706,
+    "last_error": null
+  },
+  "packet_counts": {
+    "state_snapshot": 47,
+    "timer_sync": 35,
+    "phase_changed": 22,
+    "turn_started": 20,
+    "chat_message": 22,
+    "speech_started": 12,
+    "speech_chunk": 113,
+    "model_execution": 21,
+    "speech_finished": 12,
+    "turn_finished": 12,
+    "pet_control_changed": 4,
+    "private_pet_message": 2,
+    "vote_started": 2,
+    "vote_submitted": 9,
+    "player_action": 2,
+    "vote_result": 2,
+    "game_finished": 1
+  },
+  "live_failover": {
+    "injected_primary_timeout": true,
+    "real_backup_completed": true,
+    "routing": {
+      "requested_model": "dashscope:qwen-plus",
+      "model_used": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-plus",
+        "dashscope:qwen-plus",
+        "dashscope:qwen-turbo"
+      ],
+      "failure_reason": "ReadTimeout",
+      "status": "switched",
+      "latency": 1.6094,
+      "input_tokens": 32,
+      "output_tokens": 5,
+      "total_tokens": 37
+    }
+  },
+  "routing_records": [
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "provider": "dashscope",
+      "model": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "requested_model": "dashscope:qwen-turbo",
+      "category": "wolf_discussion",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 6667,
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-turbo",
+      "success": true,
+      "latency": 2.1295,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 2402,
+      "output_tokens": 43,
+      "total_tokens": 2445
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "provider": "dashscope",
+      "model": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "requested_model": "dashscope:qwen3-max",
+      "category": "wolf_discussion",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 6838,
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen3-max",
+      "success": true,
+      "latency": 2.3571,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 2499,
+      "output_tokens": 49,
+      "total_tokens": 2548
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "provider": "dashscope",
+      "model": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "requested_model": "dashscope:qwen-turbo",
+      "category": "wolf_discussion",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 7412,
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-turbo",
+      "success": true,
+      "latency": 1.6311,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 2742,
+      "output_tokens": 35,
+      "total_tokens": 2777
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "provider": "dashscope",
+      "model": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "requested_model": "dashscope:qwen3-max",
+      "category": "wolf_discussion",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 7651,
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen3-max",
+      "success": true,
+      "latency": 2.1255,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 2861,
+      "output_tokens": 48,
+      "total_tokens": 2909
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "provider": "dashscope",
+      "model": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "requested_model": "dashscope:qwen-turbo",
+      "category": "wolf_kill",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 8298,
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-turbo",
+      "success": true,
+      "latency": 1.4886,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 3189,
+      "output_tokens": 6,
+      "total_tokens": 3195
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "provider": "dashscope",
+      "model": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "requested_model": "dashscope:qwen3-max",
+      "category": "wolf_kill",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 8329,
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen3-max",
+      "success": true,
+      "latency": 1.6009,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 3195,
+      "output_tokens": 5,
+      "total_tokens": 3200
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "4e130c560e2bb4e67a950d03064513d7",
+      "provider": "dashscope",
+      "model": "qwen-max",
+      "model_key": "dashscope:qwen-max",
+      "requested_model": "dashscope:qwen-max",
+      "category": "seer_inspect",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 6649,
+      "fallback_chain": [
+        "dashscope:qwen-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-max",
+      "success": true,
+      "latency": 1.908,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 2463,
+      "output_tokens": 5,
+      "total_tokens": 2468
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "96943ad3e7a65be2fc6266de3ce0adb6",
+      "provider": "dashscope",
+      "model": "qwen-flash",
+      "model_key": "dashscope:qwen-flash",
+      "requested_model": "dashscope:qwen-flash",
+      "category": "witch",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 6766,
+      "fallback_chain": [
+        "dashscope:qwen-flash"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-flash",
+      "success": true,
+      "latency": 1.589,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 2508,
+      "output_tokens": 11,
+      "total_tokens": 2519
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "cc0fec4ef6f3599a49dd9b17b853ece0",
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "requested_model": "dashscope:qwen-plus",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 6974,
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-plus",
+      "success": true,
+      "latency": 2.004,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 2712,
+      "output_tokens": 25,
+      "total_tokens": 2737
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "634f30fe0b955350db9bcafe02b555d3",
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "requested_model": "dashscope:qwen-plus",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 7186,
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-plus",
+      "success": true,
+      "latency": 2.3676,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 2773,
+      "output_tokens": 32,
+      "total_tokens": 2805
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "cc0fec4ef6f3599a49dd9b17b853ece0",
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "requested_model": "dashscope:qwen-plus",
+      "category": "pet_chat",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 7909,
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-plus",
+      "success": true,
+      "latency": 3.632,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 3050,
+      "output_tokens": 112,
+      "total_tokens": 3162
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "provider": "dashscope",
+      "model": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "requested_model": "dashscope:qwen-turbo",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 10381,
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-turbo",
+      "success": true,
+      "latency": 1.0617,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 4117,
+      "output_tokens": 19,
+      "total_tokens": 4136
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "4e130c560e2bb4e67a950d03064513d7",
+      "provider": "dashscope",
+      "model": "qwen-max",
+      "model_key": "dashscope:qwen-max",
+      "requested_model": "dashscope:qwen-max",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 9328,
+      "fallback_chain": [
+        "dashscope:qwen-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-max",
+      "success": true,
+      "latency": 3.0701,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 3680,
+      "output_tokens": 22,
+      "total_tokens": 3702
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "96943ad3e7a65be2fc6266de3ce0adb6",
+      "provider": "dashscope",
+      "model": "qwen-flash",
+      "model_key": "dashscope:qwen-flash",
+      "requested_model": "dashscope:qwen-flash",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 10618,
+      "fallback_chain": [
+        "dashscope:qwen-flash"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-flash",
+      "success": true,
+      "latency": 1.7026,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 4194,
+      "output_tokens": 34,
+      "total_tokens": 4228
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "provider": "dashscope",
+      "model": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "requested_model": "dashscope:qwen3-max",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 13877,
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen3-max",
+      "success": true,
+      "latency": 2.2853,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 5506,
+      "output_tokens": 45,
+      "total_tokens": 5551
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "provider": "dashscope",
+      "model": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "requested_model": "dashscope:qwen-turbo",
+      "category": "vote",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 15789,
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-turbo",
+      "success": true,
+      "latency": 1.0028,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 6278,
+      "output_tokens": 6,
+      "total_tokens": 6284
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "cc0fec4ef6f3599a49dd9b17b853ece0",
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "requested_model": "dashscope:qwen-plus",
+      "category": "vote",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 13722,
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-plus",
+      "success": true,
+      "latency": 1.7581,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 5379,
+      "output_tokens": 5,
+      "total_tokens": 5384
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "634f30fe0b955350db9bcafe02b555d3",
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "requested_model": "dashscope:qwen-plus",
+      "category": "vote",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 13486,
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-plus",
+      "success": true,
+      "latency": 1.9103,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 5271,
+      "output_tokens": 5,
+      "total_tokens": 5276
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "96943ad3e7a65be2fc6266de3ce0adb6",
+      "provider": "dashscope",
+      "model": "qwen-flash",
+      "model_key": "dashscope:qwen-flash",
+      "requested_model": "dashscope:qwen-flash",
+      "category": "vote",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 14116,
+      "fallback_chain": [
+        "dashscope:qwen-flash"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-flash",
+      "success": true,
+      "latency": 2.2901,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 5552,
+      "output_tokens": 6,
+      "total_tokens": 5558
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "4e130c560e2bb4e67a950d03064513d7",
+      "provider": "dashscope",
+      "model": "qwen-max",
+      "model_key": "dashscope:qwen-max",
+      "requested_model": "dashscope:qwen-max",
+      "category": "vote",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 14082,
+      "fallback_chain": [
+        "dashscope:qwen-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-max",
+      "success": true,
+      "latency": 2.3836,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 5537,
+      "output_tokens": 5,
+      "total_tokens": 5542
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "provider": "dashscope",
+      "model": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "requested_model": "dashscope:qwen3-max",
+      "category": "vote",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 15905,
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen3-max",
+      "success": true,
+      "latency": 3.4067,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 6312,
+      "output_tokens": 6,
+      "total_tokens": 6318
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "4e130c560e2bb4e67a950d03064513d7",
+      "provider": "dashscope",
+      "model": "qwen-max",
+      "model_key": "dashscope:qwen-max",
+      "requested_model": "dashscope:qwen-max",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 15645,
+      "fallback_chain": [
+        "dashscope:qwen-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-max",
+      "success": true,
+      "latency": 3.9545,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 6390,
+      "output_tokens": 20,
+      "total_tokens": 6410
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "provider": "dashscope",
+      "model": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "requested_model": "dashscope:qwen-turbo",
+      "category": "wolf_discussion",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 18554,
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-turbo",
+      "success": true,
+      "latency": 1.3103,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 7558,
+      "output_tokens": 44,
+      "total_tokens": 7602
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "provider": "dashscope",
+      "model": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "requested_model": "dashscope:qwen3-max",
+      "category": "wolf_discussion",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 18926,
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen3-max",
+      "success": true,
+      "latency": 3.2586,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 7717,
+      "output_tokens": 68,
+      "total_tokens": 7785
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "provider": "dashscope",
+      "model": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "requested_model": "dashscope:qwen-turbo",
+      "category": "wolf_discussion",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 19543,
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-turbo",
+      "success": true,
+      "latency": 1.7519,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 8010,
+      "output_tokens": 38,
+      "total_tokens": 8048
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "provider": "dashscope",
+      "model": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "requested_model": "dashscope:qwen3-max",
+      "category": "wolf_discussion",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 20180,
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen3-max",
+      "success": true,
+      "latency": 2.8117,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 8284,
+      "output_tokens": 50,
+      "total_tokens": 8334
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "provider": "dashscope",
+      "model": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "requested_model": "dashscope:qwen3-max",
+      "category": "wolf_kill",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 21012,
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen3-max",
+      "success": true,
+      "latency": 1.1635,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 8697,
+      "output_tokens": 6,
+      "total_tokens": 8703
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "provider": "dashscope",
+      "model": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "requested_model": "dashscope:qwen-turbo",
+      "category": "wolf_kill",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 20746,
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-turbo",
+      "success": true,
+      "latency": 1.8308,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 8621,
+      "output_tokens": 6,
+      "total_tokens": 8627
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "96943ad3e7a65be2fc6266de3ce0adb6",
+      "provider": "dashscope",
+      "model": "qwen-flash",
+      "model_key": "dashscope:qwen-flash",
+      "requested_model": "dashscope:qwen-flash",
+      "category": "witch",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 17082,
+      "fallback_chain": [
+        "dashscope:qwen-flash"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-flash",
+      "success": true,
+      "latency": 1.7851,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 6965,
+      "output_tokens": 11,
+      "total_tokens": 6976
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "provider": "dashscope",
+      "model": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "requested_model": "dashscope:qwen-turbo",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 21580,
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-turbo",
+      "success": true,
+      "latency": 2.1558,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 9011,
+      "output_tokens": 18,
+      "total_tokens": 9029
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "96943ad3e7a65be2fc6266de3ce0adb6",
+      "provider": "dashscope",
+      "model": "qwen-flash",
+      "model_key": "dashscope:qwen-flash",
+      "requested_model": "dashscope:qwen-flash",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 17496,
+      "fallback_chain": [
+        "dashscope:qwen-flash"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-flash",
+      "success": true,
+      "latency": 2.1424,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 7258,
+      "output_tokens": 31,
+      "total_tokens": 7289
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "cc0fec4ef6f3599a49dd9b17b853ece0",
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "requested_model": "dashscope:qwen-plus",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 16420,
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-plus",
+      "success": true,
+      "latency": 2.2203,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 6775,
+      "output_tokens": 36,
+      "total_tokens": 6811
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "634f30fe0b955350db9bcafe02b555d3",
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "requested_model": "dashscope:qwen-plus",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 16273,
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-plus",
+      "success": true,
+      "latency": 2.0855,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 6704,
+      "output_tokens": 34,
+      "total_tokens": 6738
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "provider": "dashscope",
+      "model": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "requested_model": "dashscope:qwen3-max",
+      "category": "speech",
+      "max_output_tokens": 350,
+      "estimated_input_tokens": 21826,
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen3-max",
+      "success": true,
+      "latency": 2.3852,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 9125,
+      "output_tokens": 35,
+      "total_tokens": 9160
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "634f30fe0b955350db9bcafe02b555d3",
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "requested_model": "dashscope:qwen-plus",
+      "category": "vote",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 17001,
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-plus",
+      "success": true,
+      "latency": 1.2318,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 6986,
+      "output_tokens": 5,
+      "total_tokens": 6991
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "cc0fec4ef6f3599a49dd9b17b853ece0",
+      "provider": "dashscope",
+      "model": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "requested_model": "dashscope:qwen-plus",
+      "category": "vote",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 17249,
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen-plus",
+      "success": true,
+      "latency": 1.6728,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 7098,
+      "output_tokens": 5,
+      "total_tokens": 7103
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "provider": "dashscope",
+      "model": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "requested_model": "dashscope:qwen3-max",
+      "category": "vote",
+      "max_output_tokens": 600,
+      "estimated_input_tokens": 22399,
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "provider_used": "dashscope",
+      "model_used": "qwen3-max",
+      "success": true,
+      "latency": 1.7908,
+      "fallback_reason": null,
+      "failure_reason": null,
+      "input_tokens": 9350,
+      "output_tokens": 6,
+      "total_tokens": 9356
+    }
+  ],
+  "outcome_records": [
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "category": "wolf_discussion",
+      "requested_model": "dashscope:qwen-turbo",
+      "model_used": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.1297,
+      "input_tokens": 2402,
+      "output_tokens": 43,
+      "total_tokens": 2445
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "category": "wolf_discussion",
+      "requested_model": "dashscope:qwen3-max",
+      "model_used": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.3572,
+      "input_tokens": 2499,
+      "output_tokens": 49,
+      "total_tokens": 2548
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "category": "wolf_discussion",
+      "requested_model": "dashscope:qwen-turbo",
+      "model_used": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.6312,
+      "input_tokens": 2742,
+      "output_tokens": 35,
+      "total_tokens": 2777
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "category": "wolf_discussion",
+      "requested_model": "dashscope:qwen3-max",
+      "model_used": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.1256,
+      "input_tokens": 2861,
+      "output_tokens": 48,
+      "total_tokens": 2909
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "category": "wolf_kill",
+      "requested_model": "dashscope:qwen-turbo",
+      "model_used": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.4888,
+      "input_tokens": 3189,
+      "output_tokens": 6,
+      "total_tokens": 3195
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "category": "wolf_kill",
+      "requested_model": "dashscope:qwen3-max",
+      "model_used": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.6012,
+      "input_tokens": 3195,
+      "output_tokens": 5,
+      "total_tokens": 3200
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "4e130c560e2bb4e67a950d03064513d7",
+      "category": "seer_inspect",
+      "requested_model": "dashscope:qwen-max",
+      "model_used": "qwen-max",
+      "model_key": "dashscope:qwen-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.9082,
+      "input_tokens": 2463,
+      "output_tokens": 5,
+      "total_tokens": 2468
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "96943ad3e7a65be2fc6266de3ce0adb6",
+      "category": "witch",
+      "requested_model": "dashscope:qwen-flash",
+      "model_used": "qwen-flash",
+      "model_key": "dashscope:qwen-flash",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-flash"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.5891,
+      "input_tokens": 2508,
+      "output_tokens": 11,
+      "total_tokens": 2519
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "cc0fec4ef6f3599a49dd9b17b853ece0",
+      "category": "speech",
+      "requested_model": "dashscope:qwen-plus",
+      "model_used": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.0042,
+      "input_tokens": 2712,
+      "output_tokens": 25,
+      "total_tokens": 2737
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "634f30fe0b955350db9bcafe02b555d3",
+      "category": "speech",
+      "requested_model": "dashscope:qwen-plus",
+      "model_used": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.3679,
+      "input_tokens": 2773,
+      "output_tokens": 32,
+      "total_tokens": 2805
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "cc0fec4ef6f3599a49dd9b17b853ece0",
+      "category": "pet_chat",
+      "requested_model": "dashscope:qwen-plus",
+      "model_used": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 3.6321,
+      "input_tokens": 3050,
+      "output_tokens": 112,
+      "total_tokens": 3162
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "category": "speech",
+      "requested_model": "dashscope:qwen-turbo",
+      "model_used": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.0619,
+      "input_tokens": 4117,
+      "output_tokens": 19,
+      "total_tokens": 4136
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "4e130c560e2bb4e67a950d03064513d7",
+      "category": "speech",
+      "requested_model": "dashscope:qwen-max",
+      "model_used": "qwen-max",
+      "model_key": "dashscope:qwen-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 3.0704,
+      "input_tokens": 3680,
+      "output_tokens": 22,
+      "total_tokens": 3702
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "96943ad3e7a65be2fc6266de3ce0adb6",
+      "category": "speech",
+      "requested_model": "dashscope:qwen-flash",
+      "model_used": "qwen-flash",
+      "model_key": "dashscope:qwen-flash",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-flash"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.7028,
+      "input_tokens": 4194,
+      "output_tokens": 34,
+      "total_tokens": 4228
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "category": "speech",
+      "requested_model": "dashscope:qwen3-max",
+      "model_used": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.2855,
+      "input_tokens": 5506,
+      "output_tokens": 45,
+      "total_tokens": 5551
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "category": "vote",
+      "requested_model": "dashscope:qwen-turbo",
+      "model_used": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.003,
+      "input_tokens": 6278,
+      "output_tokens": 6,
+      "total_tokens": 6284
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "cc0fec4ef6f3599a49dd9b17b853ece0",
+      "category": "vote",
+      "requested_model": "dashscope:qwen-plus",
+      "model_used": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.7583,
+      "input_tokens": 5379,
+      "output_tokens": 5,
+      "total_tokens": 5384
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "634f30fe0b955350db9bcafe02b555d3",
+      "category": "vote",
+      "requested_model": "dashscope:qwen-plus",
+      "model_used": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.9105,
+      "input_tokens": 5271,
+      "output_tokens": 5,
+      "total_tokens": 5276
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "96943ad3e7a65be2fc6266de3ce0adb6",
+      "category": "vote",
+      "requested_model": "dashscope:qwen-flash",
+      "model_used": "qwen-flash",
+      "model_key": "dashscope:qwen-flash",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-flash"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.2903,
+      "input_tokens": 5552,
+      "output_tokens": 6,
+      "total_tokens": 5558
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "4e130c560e2bb4e67a950d03064513d7",
+      "category": "vote",
+      "requested_model": "dashscope:qwen-max",
+      "model_used": "qwen-max",
+      "model_key": "dashscope:qwen-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.3838,
+      "input_tokens": 5537,
+      "output_tokens": 5,
+      "total_tokens": 5542
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "category": "vote",
+      "requested_model": "dashscope:qwen3-max",
+      "model_used": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 3.4068,
+      "input_tokens": 6312,
+      "output_tokens": 6,
+      "total_tokens": 6318
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "4e130c560e2bb4e67a950d03064513d7",
+      "category": "speech",
+      "requested_model": "dashscope:qwen-max",
+      "model_used": "qwen-max",
+      "model_key": "dashscope:qwen-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 3.9548,
+      "input_tokens": 6390,
+      "output_tokens": 20,
+      "total_tokens": 6410
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "category": "wolf_discussion",
+      "requested_model": "dashscope:qwen-turbo",
+      "model_used": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.3106,
+      "input_tokens": 7558,
+      "output_tokens": 44,
+      "total_tokens": 7602
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "category": "wolf_discussion",
+      "requested_model": "dashscope:qwen3-max",
+      "model_used": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 3.2587,
+      "input_tokens": 7717,
+      "output_tokens": 68,
+      "total_tokens": 7785
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "category": "wolf_discussion",
+      "requested_model": "dashscope:qwen-turbo",
+      "model_used": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.7521,
+      "input_tokens": 8010,
+      "output_tokens": 38,
+      "total_tokens": 8048
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "category": "wolf_discussion",
+      "requested_model": "dashscope:qwen3-max",
+      "model_used": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.812,
+      "input_tokens": 8284,
+      "output_tokens": 50,
+      "total_tokens": 8334
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "category": "wolf_kill",
+      "requested_model": "dashscope:qwen3-max",
+      "model_used": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.1637,
+      "input_tokens": 8697,
+      "output_tokens": 6,
+      "total_tokens": 8703
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "category": "wolf_kill",
+      "requested_model": "dashscope:qwen-turbo",
+      "model_used": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.831,
+      "input_tokens": 8621,
+      "output_tokens": 6,
+      "total_tokens": 8627
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "96943ad3e7a65be2fc6266de3ce0adb6",
+      "category": "witch",
+      "requested_model": "dashscope:qwen-flash",
+      "model_used": "qwen-flash",
+      "model_key": "dashscope:qwen-flash",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-flash"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.7853,
+      "input_tokens": 6965,
+      "output_tokens": 11,
+      "total_tokens": 6976
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+      "category": "speech",
+      "requested_model": "dashscope:qwen-turbo",
+      "model_used": "qwen-turbo",
+      "model_key": "dashscope:qwen-turbo",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-turbo"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.156,
+      "input_tokens": 9011,
+      "output_tokens": 18,
+      "total_tokens": 9029
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "96943ad3e7a65be2fc6266de3ce0adb6",
+      "category": "speech",
+      "requested_model": "dashscope:qwen-flash",
+      "model_used": "qwen-flash",
+      "model_key": "dashscope:qwen-flash",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-flash"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.1428,
+      "input_tokens": 7258,
+      "output_tokens": 31,
+      "total_tokens": 7289
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "cc0fec4ef6f3599a49dd9b17b853ece0",
+      "category": "speech",
+      "requested_model": "dashscope:qwen-plus",
+      "model_used": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.2205,
+      "input_tokens": 6775,
+      "output_tokens": 36,
+      "total_tokens": 6811
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "634f30fe0b955350db9bcafe02b555d3",
+      "category": "speech",
+      "requested_model": "dashscope:qwen-plus",
+      "model_used": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.0857,
+      "input_tokens": 6704,
+      "output_tokens": 34,
+      "total_tokens": 6738
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "category": "speech",
+      "requested_model": "dashscope:qwen3-max",
+      "model_used": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 2.3854,
+      "input_tokens": 9125,
+      "output_tokens": 35,
+      "total_tokens": 9160
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "634f30fe0b955350db9bcafe02b555d3",
+      "category": "vote",
+      "requested_model": "dashscope:qwen-plus",
+      "model_used": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.2321,
+      "input_tokens": 6986,
+      "output_tokens": 5,
+      "total_tokens": 6991
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "cc0fec4ef6f3599a49dd9b17b853ece0",
+      "category": "vote",
+      "requested_model": "dashscope:qwen-plus",
+      "model_used": "qwen-plus",
+      "model_key": "dashscope:qwen-plus",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen-plus"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.673,
+      "input_tokens": 7098,
+      "output_tokens": 5,
+      "total_tokens": 7103
+    },
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+      "category": "vote",
+      "requested_model": "dashscope:qwen3-max",
+      "model_used": "qwen3-max",
+      "model_key": "dashscope:qwen3-max",
+      "provider_used": "dashscope",
+      "fallback_chain": [
+        "dashscope:qwen3-max"
+      ],
+      "failure_reason": null,
+      "status": "success",
+      "latency": 1.7912,
+      "input_tokens": 9350,
+      "output_tokens": 6,
+      "total_tokens": 9356
+    }
+  ],
+  "sqlite_saves": {
+    "e4dd76eaf4": 50
+  },
+  "pet_checks": [
+    {
+      "room": "e4dd76eaf4",
+      "before_sequence": 6,
+      "after_sequence": 6,
+      "reply": "当前最值得追问4号（谨慎型AI）。已知事实：平安夜，无死亡；1号为村民（系统确认）；其余5人身份均未被系统证实。4号性格设定为‘cautious’，在首日发言中尚未开口，但其谨慎特质可能使其发言更重逻辑或刻意回避焦点——这既可能是好人自保，也可能是狼人规避查验矛盾。暂无任何查验结果或投票记录，故所有身份猜测均为未证实推断。"
+    }
+  ],
+  "model_actions": [
+    {
+      "actor": 3,
+      "action": "wolf_discussion",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 2.13,
+      "data": {
+        "speech": "今晚先刀4号，他发言有点可疑。明天我们统一站边女巫。",
+        "preferred_target": 4,
+        "confidence": 0.8
+      },
+      "options": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-turbo",
+        "model_used": "qwen-turbo",
+        "model_key": "dashscope:qwen-turbo",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-turbo"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.1297,
+        "input_tokens": 2402,
+        "output_tokens": 43,
+        "total_tokens": 2445
+      }
+    },
+    {
+      "actor": 6,
+      "action": "wolf_discussion",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 2.358,
+      "data": {
+        "speech": "同意刀4号。他性格谨慎易被怀疑，除掉可扰乱好人判断。明日统一认女巫并倒钩站边，避免暴露。",
+        "preferred_target": 4,
+        "confidence": 0.75
+      },
+      "options": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen3-max",
+        "model_used": "qwen3-max",
+        "model_key": "dashscope:qwen3-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen3-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.3572,
+        "input_tokens": 2499,
+        "output_tokens": 49,
+        "total_tokens": 2548
+      }
+    },
+    {
+      "actor": 3,
+      "action": "wolf_discussion",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.632,
+      "data": {
+        "speech": "同意刀4号，他发言确实可疑。明天统一站边女巫，避免暴露。",
+        "preferred_target": 4,
+        "confidence": 0.8
+      },
+      "options": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-turbo",
+        "model_used": "qwen-turbo",
+        "model_key": "dashscope:qwen-turbo",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-turbo"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.6312,
+        "input_tokens": 2742,
+        "output_tokens": 35,
+        "total_tokens": 2777
+      }
+    },
+    {
+      "actor": 6,
+      "action": "wolf_discussion",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 2.126,
+      "data": {
+        "speech": "同意刀4号，他性格谨慎易被怀疑，除掉可扰乱好人判断。明日统一认女巫并倒钩站边，避免暴露。",
+        "preferred_target": 4,
+        "confidence": 0.8
+      },
+      "options": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen3-max",
+        "model_used": "qwen3-max",
+        "model_key": "dashscope:qwen3-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen3-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.1256,
+        "input_tokens": 2861,
+        "output_tokens": 48,
+        "total_tokens": 2909
+      }
+    },
+    {
+      "actor": 3,
+      "action": "wolf_kill",
+      "target": 4,
+      "provider": "dashscope",
+      "latency": 1.489,
+      "data": {
+        "target": 4
+      },
+      "options": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-turbo",
+        "model_used": "qwen-turbo",
+        "model_key": "dashscope:qwen-turbo",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-turbo"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.4888,
+        "input_tokens": 3189,
+        "output_tokens": 6,
+        "total_tokens": 3195
+      }
+    },
+    {
+      "actor": 6,
+      "action": "wolf_kill",
+      "target": 4,
+      "provider": "dashscope",
+      "latency": 1.602,
+      "data": {
+        "target": 4
+      },
+      "options": [
+        1,
+        2,
+        4,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen3-max",
+        "model_used": "qwen3-max",
+        "model_key": "dashscope:qwen3-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen3-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.6012,
+        "input_tokens": 3195,
+        "output_tokens": 5,
+        "total_tokens": 3200
+      }
+    },
+    {
+      "actor": 4,
+      "action": "seer_inspect",
+      "target": 1,
+      "provider": "dashscope",
+      "latency": 1.909,
+      "data": {
+        "target": 1
+      },
+      "options": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-max",
+        "model_used": "qwen-max",
+        "model_key": "dashscope:qwen-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.9082,
+        "input_tokens": 2463,
+        "output_tokens": 5,
+        "total_tokens": 2468
+      }
+    },
+    {
+      "actor": 5,
+      "action": "witch",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.59,
+      "data": {
+        "save": true,
+        "poison_target": null
+      },
+      "options": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-flash",
+        "model_used": "qwen-flash",
+        "model_key": "dashscope:qwen-flash",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-flash"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.5891,
+        "input_tokens": 2508,
+        "output_tokens": 11,
+        "total_tokens": 2519
+      }
+    },
+    {
+      "actor": 1,
+      "action": "pet",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 3.632,
+      "data": {
+        "speech": "当前最值得追问4号（谨慎型AI）。已知事实：平安夜，无死亡；1号为村民（系统确认）；其余5人身份均未被系统证实。4号性格设定为‘cautious’，在首日发言中尚未开口，但其谨慎特质可能使其发言更重逻辑或刻意回避焦点——这既可能是好人自保，也可能是狼人规避查验矛盾。暂无任何查验结果或投票记录，故所有身份猜测均为未证实推断。"
+      },
+      "options": [],
+      "routing": {
+        "requested_model": "dashscope:qwen-plus",
+        "model_used": "qwen-plus",
+        "model_key": "dashscope:qwen-plus",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-plus"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 3.6321,
+        "input_tokens": 3050,
+        "output_tokens": 112,
+        "total_tokens": 3162
+      }
+    },
+    {
+      "actor": 3,
+      "action": "vote",
+      "target": 4,
+      "provider": "dashscope",
+      "latency": 1.004,
+      "data": {
+        "target": 4
+      },
+      "options": [
+        1,
+        2,
+        4,
+        5,
+        6
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-turbo",
+        "model_used": "qwen-turbo",
+        "model_key": "dashscope:qwen-turbo",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-turbo"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.003,
+        "input_tokens": 6278,
+        "output_tokens": 6,
+        "total_tokens": 6284
+      }
+    },
+    {
+      "actor": 1,
+      "action": "vote",
+      "target": 5,
+      "provider": "dashscope",
+      "latency": 1.759,
+      "data": {
+        "target": 5
+      },
+      "options": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-plus",
+        "model_used": "qwen-plus",
+        "model_key": "dashscope:qwen-plus",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-plus"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.7583,
+        "input_tokens": 5379,
+        "output_tokens": 5,
+        "total_tokens": 5384
+      }
+    },
+    {
+      "actor": 2,
+      "action": "vote",
+      "target": 5,
+      "provider": "dashscope",
+      "latency": 1.911,
+      "data": {
+        "target": 5
+      },
+      "options": [
+        1,
+        3,
+        4,
+        5,
+        6
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-plus",
+        "model_used": "qwen-plus",
+        "model_key": "dashscope:qwen-plus",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-plus"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.9105,
+        "input_tokens": 5271,
+        "output_tokens": 5,
+        "total_tokens": 5276
+      }
+    },
+    {
+      "actor": 5,
+      "action": "vote",
+      "target": 4,
+      "provider": "dashscope",
+      "latency": 2.291,
+      "data": {
+        "target": 4
+      },
+      "options": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-flash",
+        "model_used": "qwen-flash",
+        "model_key": "dashscope:qwen-flash",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-flash"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.2903,
+        "input_tokens": 5552,
+        "output_tokens": 6,
+        "total_tokens": 5558
+      }
+    },
+    {
+      "actor": 4,
+      "action": "vote",
+      "target": 3,
+      "provider": "dashscope",
+      "latency": 2.384,
+      "data": {
+        "target": 3
+      },
+      "options": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-max",
+        "model_used": "qwen-max",
+        "model_key": "dashscope:qwen-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.3838,
+        "input_tokens": 5537,
+        "output_tokens": 5,
+        "total_tokens": 5542
+      }
+    },
+    {
+      "actor": 6,
+      "action": "vote",
+      "target": 4,
+      "provider": "dashscope",
+      "latency": 3.407,
+      "data": {
+        "target": 4
+      },
+      "options": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen3-max",
+        "model_used": "qwen3-max",
+        "model_key": "dashscope:qwen3-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen3-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 3.4068,
+        "input_tokens": 6312,
+        "output_tokens": 6,
+        "total_tokens": 6318
+      }
+    },
+    {
+      "actor": 3,
+      "action": "wolf_discussion",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.311,
+      "data": {
+        "speech": "同意刀4号，他发言确实可疑。明天统一站边女巫，避免暴露。",
+        "preferred_target": 5,
+        "confidence": 0.7
+      },
+      "options": [
+        1,
+        2,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-turbo",
+        "model_used": "qwen-turbo",
+        "model_key": "dashscope:qwen-turbo",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-turbo"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.3106,
+        "input_tokens": 7558,
+        "output_tokens": 44,
+        "total_tokens": 7602
+      }
+    },
+    {
+      "actor": 6,
+      "action": "wolf_discussion",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 3.259,
+      "data": {
+        "speech": "4号已出局，5号自称女巫救他，若为真则昨夜非平安夜，矛盾明显。建议今晚刀5号，验证其身份真假。明日我可倒钩站边1号，引导怀疑2、3。",
+        "preferred_target": 5,
+        "confidence": 0.7
+      },
+      "options": [
+        1,
+        2,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen3-max",
+        "model_used": "qwen3-max",
+        "model_key": "dashscope:qwen3-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen3-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 3.2587,
+        "input_tokens": 7717,
+        "output_tokens": 68,
+        "total_tokens": 7785
+      }
+    },
+    {
+      "actor": 3,
+      "action": "wolf_discussion",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.752,
+      "data": {
+        "speech": "同意刀5号，其身份存疑。明日统一站边1号，引导怀疑2、3。",
+        "preferred_target": 5,
+        "confidence": 0.7
+      },
+      "options": [
+        1,
+        2,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-turbo",
+        "model_used": "qwen-turbo",
+        "model_key": "dashscope:qwen-turbo",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-turbo"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.7521,
+        "input_tokens": 8010,
+        "output_tokens": 38,
+        "total_tokens": 8048
+      }
+    },
+    {
+      "actor": 6,
+      "action": "wolf_discussion",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 2.812,
+      "data": {
+        "speech": "同意刀5号，其女巫身份与平安夜矛盾。明日统一倒钩站边1号，引导票型集中于2、3，制造混乱。",
+        "preferred_target": 5,
+        "confidence": 0.7
+      },
+      "options": [
+        1,
+        2,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen3-max",
+        "model_used": "qwen3-max",
+        "model_key": "dashscope:qwen3-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen3-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.812,
+        "input_tokens": 8284,
+        "output_tokens": 50,
+        "total_tokens": 8334
+      }
+    },
+    {
+      "actor": 6,
+      "action": "wolf_kill",
+      "target": 5,
+      "provider": "dashscope",
+      "latency": 1.165,
+      "data": {
+        "target": 5
+      },
+      "options": [
+        1,
+        2,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen3-max",
+        "model_used": "qwen3-max",
+        "model_key": "dashscope:qwen3-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen3-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.1637,
+        "input_tokens": 8697,
+        "output_tokens": 6,
+        "total_tokens": 8703
+      }
+    },
+    {
+      "actor": 3,
+      "action": "wolf_kill",
+      "target": 5,
+      "provider": "dashscope",
+      "latency": 1.831,
+      "data": {
+        "target": 5
+      },
+      "options": [
+        1,
+        2,
+        5
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-turbo",
+        "model_used": "qwen-turbo",
+        "model_key": "dashscope:qwen-turbo",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-turbo"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.831,
+        "input_tokens": 8621,
+        "output_tokens": 6,
+        "total_tokens": 8627
+      }
+    },
+    {
+      "actor": 5,
+      "action": "witch",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.788,
+      "data": {
+        "save": false,
+        "poison_target": 3
+      },
+      "options": [
+        1,
+        2,
+        3,
+        6
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-flash",
+        "model_used": "qwen-flash",
+        "model_key": "dashscope:qwen-flash",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-flash"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.7853,
+        "input_tokens": 6965,
+        "output_tokens": 11,
+        "total_tokens": 6976
+      }
+    },
+    {
+      "actor": 2,
+      "action": "vote",
+      "target": 1,
+      "provider": "dashscope",
+      "latency": 1.233,
+      "data": {
+        "target": 1
+      },
+      "options": [
+        1,
+        6
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-plus",
+        "model_used": "qwen-plus",
+        "model_key": "dashscope:qwen-plus",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-plus"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.2321,
+        "input_tokens": 6986,
+        "output_tokens": 5,
+        "total_tokens": 6991
+      }
+    },
+    {
+      "actor": 1,
+      "action": "vote",
+      "target": 2,
+      "provider": "dashscope",
+      "latency": 1.673,
+      "data": {
+        "target": 2
+      },
+      "options": [
+        2,
+        6
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen-plus",
+        "model_used": "qwen-plus",
+        "model_key": "dashscope:qwen-plus",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-plus"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.673,
+        "input_tokens": 7098,
+        "output_tokens": 5,
+        "total_tokens": 7103
+      }
+    },
+    {
+      "actor": 6,
+      "action": "vote",
+      "target": 2,
+      "provider": "dashscope",
+      "latency": 1.792,
+      "data": {
+        "target": 2
+      },
+      "options": [
+        1,
+        2
+      ],
+      "routing": {
+        "requested_model": "dashscope:qwen3-max",
+        "model_used": "qwen3-max",
+        "model_key": "dashscope:qwen3-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen3-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.7912,
+        "input_tokens": 9350,
+        "output_tokens": 6,
+        "total_tokens": 9356
+      }
+    }
+  ],
+  "model_speeches": [
+    {
+      "actor": 1,
+      "text": "平安夜，无死亡。我是一号村民，暂无查验信息，需听清每位发言逻辑与细节。",
+      "latency": 2.006,
+      "routing": {
+        "requested_model": "dashscope:qwen-plus",
+        "model_used": "qwen-plus",
+        "model_key": "dashscope:qwen-plus",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-plus"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.0042,
+        "input_tokens": 2712,
+        "output_tokens": 25,
+        "total_tokens": 2737
+      }
+    },
+    {
+      "actor": 2,
+      "text": "平安夜？1号跳村民太急！3号4号5号6号，谁敢对跳预言家？不站边就锤！",
+      "latency": 2.369,
+      "routing": {
+        "requested_model": "dashscope:qwen-plus",
+        "model_used": "qwen-plus",
+        "model_key": "dashscope:qwen-plus",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-plus"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.3679,
+        "input_tokens": 2773,
+        "output_tokens": 32,
+        "total_tokens": 2805
+      }
+    },
+    {
+      "actor": 3,
+      "text": "今晚先刀4号，他发言有点可疑。明天我们统一站边女巫。",
+      "latency": 1.063,
+      "routing": {
+        "requested_model": "dashscope:qwen-turbo",
+        "model_used": "qwen-turbo",
+        "model_key": "dashscope:qwen-turbo",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-turbo"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.0619,
+        "input_tokens": 4117,
+        "output_tokens": 19,
+        "total_tokens": 4136
+      }
+    },
+    {
+      "actor": 4,
+      "text": "我是4号预言家，昨晚查验1号是好人。请大家注意发言逻辑，找出狼人。",
+      "latency": 3.071,
+      "routing": {
+        "requested_model": "dashscope:qwen-max",
+        "model_used": "qwen-max",
+        "model_key": "dashscope:qwen-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 3.0704,
+        "input_tokens": 3680,
+        "output_tokens": 22,
+        "total_tokens": 3702
+      }
+    },
+    {
+      "actor": 5,
+      "text": "我救了4号，他现在说查验1号是好人，可我昨晚明明救的是4号，这波操作太迷了，大家小心！",
+      "latency": 1.703,
+      "routing": {
+        "requested_model": "dashscope:qwen-flash",
+        "model_used": "qwen-flash",
+        "model_key": "dashscope:qwen-flash",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-flash"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 1.7028,
+        "input_tokens": 4194,
+        "output_tokens": 34,
+        "total_tokens": 4228
+      }
+    },
+    {
+      "actor": 6,
+      "text": "4号跳预言家查1号，5号却说救了4号——女巫和预言家身份冲突。建议4、5对质救人与查验逻辑，否则双狼可能藏在其中。",
+      "latency": 2.286,
+      "routing": {
+        "requested_model": "dashscope:qwen3-max",
+        "model_used": "qwen3-max",
+        "model_key": "dashscope:qwen3-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen3-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.2855,
+        "input_tokens": 5506,
+        "output_tokens": 45,
+        "total_tokens": 5551
+      }
+    },
+    {
+      "actor": 4,
+      "text": "我是预言家，1号是好人。请各位仔细分析发言，找出真正的狼人。",
+      "latency": 3.956,
+      "routing": {
+        "requested_model": "dashscope:qwen-max",
+        "model_used": "qwen-max",
+        "model_key": "dashscope:qwen-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 3.9548,
+        "input_tokens": 6390,
+        "output_tokens": 20,
+        "total_tokens": 6410
+      }
+    },
+    {
+      "actor": 3,
+      "text": "我已出局，但狼队未败，愿你们在混乱中找到真相。",
+      "latency": 2.156,
+      "routing": {
+        "requested_model": "dashscope:qwen-turbo",
+        "model_used": "qwen-turbo",
+        "model_key": "dashscope:qwen-turbo",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-turbo"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.156,
+        "input_tokens": 9011,
+        "output_tokens": 18,
+        "total_tokens": 9029
+      }
+    },
+    {
+      "actor": 5,
+      "text": "我救了4号，却毒了3号——真相在谎言里翻滚，可别让我的遗言变成你们的迷局！",
+      "latency": 2.143,
+      "routing": {
+        "requested_model": "dashscope:qwen-flash",
+        "model_used": "qwen-flash",
+        "model_key": "dashscope:qwen-flash",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-flash"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.1428,
+        "input_tokens": 7258,
+        "output_tokens": 31,
+        "total_tokens": 7289
+      }
+    },
+    {
+      "actor": 1,
+      "text": "4号跳预言家查我，5号却称救了4号——女巫与预言家身份冲突，且3、5双死需深究逻辑。",
+      "latency": 2.221,
+      "routing": {
+        "requested_model": "dashscope:qwen-plus",
+        "model_used": "qwen-plus",
+        "model_key": "dashscope:qwen-plus",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-plus"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.2205,
+        "input_tokens": 6775,
+        "output_tokens": 36,
+        "total_tokens": 6811
+      }
+    },
+    {
+      "actor": 2,
+      "text": "3号和5号双死！4号跳预言家查1号，5号却说救了4号——逻辑硬冲突，必须严查！",
+      "latency": 2.086,
+      "routing": {
+        "requested_model": "dashscope:qwen-plus",
+        "model_used": "qwen-plus",
+        "model_key": "dashscope:qwen-plus",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen-plus"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.0857,
+        "input_tokens": 6704,
+        "output_tokens": 34,
+        "total_tokens": 6738
+      }
+    },
+    {
+      "actor": 6,
+      "text": "昨夜双死，5号自称女巫却与平安夜矛盾。建议严查其身份，同时聚焦2号发言逻辑，避免误放真狼。",
+      "latency": 2.386,
+      "routing": {
+        "requested_model": "dashscope:qwen3-max",
+        "model_used": "qwen3-max",
+        "model_key": "dashscope:qwen3-max",
+        "provider_used": "dashscope",
+        "fallback_chain": [
+          "dashscope:qwen3-max"
+        ],
+        "failure_reason": null,
+        "status": "success",
+        "latency": 2.3854,
+        "input_tokens": 9125,
+        "output_tokens": 35,
+        "total_tokens": 9160
+      }
+    }
+  ],
+  "phases": [
+    {
+      "room": "e4dd76eaf4",
+      "phase": "night_discussion",
+      "day": 1,
+      "actor": null,
+      "sequence": 1
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "night_wolves",
+      "day": 1,
+      "actor": null,
+      "sequence": 2
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "night_seer",
+      "day": 1,
+      "actor": null,
+      "sequence": 3
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "night_witch",
+      "day": 1,
+      "actor": null,
+      "sequence": 4
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 1,
+      "sequence": 5
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 2,
+      "sequence": 6
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 3,
+      "sequence": 7
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 4,
+      "sequence": 8
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 5,
+      "sequence": 9
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 6,
+      "sequence": 10
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "day_vote",
+      "day": 1,
+      "actor": null,
+      "sequence": 11
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "last_words",
+      "day": 1,
+      "actor": 4,
+      "sequence": 12
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "night_discussion",
+      "day": 2,
+      "actor": null,
+      "sequence": 13
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "night_wolves",
+      "day": 2,
+      "actor": null,
+      "sequence": 14
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "night_seer",
+      "day": 2,
+      "actor": null,
+      "sequence": 15
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "night_witch",
+      "day": 2,
+      "actor": null,
+      "sequence": 16
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "last_words",
+      "day": 2,
+      "actor": 3,
+      "sequence": 17
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "last_words",
+      "day": 2,
+      "actor": 5,
+      "sequence": 18
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "day_speech",
+      "day": 2,
+      "actor": 1,
+      "sequence": 19
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "day_speech",
+      "day": 2,
+      "actor": 2,
+      "sequence": 20
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "day_speech",
+      "day": 2,
+      "actor": 6,
+      "sequence": 21
+    },
+    {
+      "room": "e4dd76eaf4",
+      "phase": "day_vote",
+      "day": 2,
+      "actor": null,
+      "sequence": 22
+    }
+  ],
+  "action_repairs": {
+    "normalized": 0,
+    "invalid": 0
+  },
+  "games": [
+    {
+      "room_id": "e4dd76eaf4",
+      "game_id": "4a76f0b43a14d88942160319",
+      "winner": "wolves",
+      "completed": true,
+      "day": 2,
+      "elapsed_seconds": 173.6,
+      "events": [
+        {
+          "seq": 1,
+          "day": 1,
+          "kind": "system",
+          "text": "实测玩家1 加入了 1 号座位。",
+          "player_id": null,
+          "event_id": "4a76f0b43a14d88942160319:1",
+          "event_seq": 1,
+          "state_revision": 1,
+          "turn_id": "4a76f0b43a14d88942160319:0"
+        },
+        {
+          "seq": 2,
+          "day": 1,
+          "kind": "system",
+          "text": "身份牌已私下发放。天黑请闭眼。",
+          "player_id": null,
+          "event_id": "4a76f0b43a14d88942160319:4",
+          "event_seq": 4,
+          "state_revision": 4,
+          "turn_id": "4a76f0b43a14d88942160319:0"
+        },
+        {
+          "seq": 3,
+          "day": 1,
+          "kind": "death",
+          "text": "天亮了，昨夜是平安夜。",
+          "player_id": null,
+          "event_id": "4a76f0b43a14d88942160319:41",
+          "event_seq": 41,
+          "state_revision": 29,
+          "turn_id": "4a76f0b43a14d88942160319:4"
+        },
+        {
+          "seq": 4,
+          "day": 1,
+          "kind": "speech",
+          "text": "1号 实测玩家1：平安夜，无死亡。我是一号村民，暂无查验信息，需听清每位发言逻辑与细节。",
+          "player_id": 1,
+          "speech": "平安夜，无死亡。我是一号村民，暂无查验信息，需听清每位发言逻辑与细节。",
+          "event_id": "4a76f0b43a14d88942160319:53",
+          "event_seq": 53,
+          "state_revision": 40,
+          "turn_id": "4a76f0b43a14d88942160319:5"
+        },
+        {
+          "seq": 5,
+          "day": 1,
+          "kind": "speech",
+          "text": "2号 AI 2号：平安夜？1号跳村民太急！3号4号5号6号，谁敢对跳预言家？不站边就锤！",
+          "player_id": 2,
+          "speech": "平安夜？1号跳村民太急！3号4号5号6号，谁敢对跳预言家？不站边就锤！",
+          "event_id": "4a76f0b43a14d88942160319:74",
+          "event_seq": 74,
+          "state_revision": 61,
+          "turn_id": "4a76f0b43a14d88942160319:6"
+        },
+        {
+          "seq": 6,
+          "day": 1,
+          "kind": "speech",
+          "text": "3号 AI 3号：今晚先刀4号，他发言有点可疑。明天我们统一站边女巫。",
+          "player_id": 3,
+          "speech": "今晚先刀4号，他发言有点可疑。明天我们统一站边女巫。",
+          "event_id": "4a76f0b43a14d88942160319:89",
+          "event_seq": 89,
+          "state_revision": 76,
+          "turn_id": "4a76f0b43a14d88942160319:7"
+        },
+        {
+          "seq": 7,
+          "day": 1,
+          "kind": "speech",
+          "text": "4号 AI 4号：我是4号预言家，昨晚查验1号是好人。请大家注意发言逻辑，找出狼人。",
+          "player_id": 4,
+          "speech": "我是4号预言家，昨晚查验1号是好人。请大家注意发言逻辑，找出狼人。",
+          "event_id": "4a76f0b43a14d88942160319:106",
+          "event_seq": 106,
+          "state_revision": 92,
+          "turn_id": "4a76f0b43a14d88942160319:8"
+        },
+        {
+          "seq": 8,
+          "day": 1,
+          "kind": "speech",
+          "text": "5号 AI 5号：我救了4号，他现在说查验1号是好人，可我昨晚明明救的是4号，这波操作太迷了，大家小心！",
+          "player_id": 5,
+          "speech": "我救了4号，他现在说查验1号是好人，可我昨晚明明救的是4号，这波操作太迷了，大家小心！",
+          "event_id": "4a76f0b43a14d88942160319:126",
+          "event_seq": 126,
+          "state_revision": 111,
+          "turn_id": "4a76f0b43a14d88942160319:9"
+        },
+        {
+          "seq": 9,
+          "day": 1,
+          "kind": "speech",
+          "text": "6号 AI 6号：4号跳预言家查1号，5号却说救了4号——女巫和预言家身份冲突。建议4、5对质救人与查验逻辑，否则双狼可能藏在其中。",
+          "player_id": 6,
+          "speech": "4号跳预言家查1号，5号却说救了4号——女巫和预言家身份冲突。建议4、5对质救人与查验逻辑，否则双狼可能藏在其中。",
+          "event_id": "4a76f0b43a14d88942160319:147",
+          "event_seq": 147,
+          "state_revision": 131,
+          "turn_id": "4a76f0b43a14d88942160319:10"
+        },
+        {
+          "seq": 10,
+          "day": 1,
+          "kind": "system",
+          "text": "所有玩家发言完毕，开始投票。提交后仅显示已投状态，结束时公布票型。",
+          "player_id": null,
+          "event_id": "4a76f0b43a14d88942160319:150",
+          "event_seq": 150,
+          "state_revision": 134,
+          "turn_id": "4a76f0b43a14d88942160319:10"
+        },
+        {
+          "seq": 11,
+          "day": 1,
+          "kind": "vote",
+          "text": "投票结果：1→5；2→5；3→4；4→3；5→4；6→4。",
+          "player_id": null,
+          "votes": {
+            "3": 4,
+            "1": 5,
+            "2": 5,
+            "5": 4,
+            "4": 3,
+            "6": 4
+          },
+          "event_id": "4a76f0b43a14d88942160319:172",
+          "event_seq": 172,
+          "state_revision": 155,
+          "turn_id": "4a76f0b43a14d88942160319:11"
+        },
+        {
+          "seq": 12,
+          "day": 1,
+          "kind": "death",
+          "text": "4号被放逐。",
+          "player_id": null,
+          "event_id": "4a76f0b43a14d88942160319:174",
+          "event_seq": 174,
+          "state_revision": 158,
+          "turn_id": "4a76f0b43a14d88942160319:11"
+        },
+        {
+          "seq": 13,
+          "day": 1,
+          "kind": "speech",
+          "text": "4号 AI 4号：我是预言家，1号是好人。请各位仔细分析发言，找出真正的狼人。",
+          "player_id": 4,
+          "speech": "我是预言家，1号是好人。请各位仔细分析发言，找出真正的狼人。",
+          "event_id": "4a76f0b43a14d88942160319:188",
+          "event_seq": 188,
+          "state_revision": 171,
+          "turn_id": "4a76f0b43a14d88942160319:12"
+        },
+        {
+          "seq": 14,
+          "day": 2,
+          "kind": "system",
+          "text": "第 2 夜开始。",
+          "player_id": null,
+          "event_id": "4a76f0b43a14d88942160319:191",
+          "event_seq": 191,
+          "state_revision": 174,
+          "turn_id": "4a76f0b43a14d88942160319:12"
+        },
+        {
+          "seq": 15,
+          "day": 2,
+          "kind": "death",
+          "text": "天亮了，昨夜死亡：3号、5号。",
+          "player_id": null,
+          "event_id": "4a76f0b43a14d88942160319:226",
+          "event_seq": 226,
+          "state_revision": 199,
+          "turn_id": "4a76f0b43a14d88942160319:16"
+        },
+        {
+          "seq": 16,
+          "day": 2,
+          "kind": "speech",
+          "text": "3号 AI 3号：我已出局，但狼队未败，愿你们在混乱中找到真相。",
+          "player_id": 3,
+          "speech": "我已出局，但狼队未败，愿你们在混乱中找到真相。",
+          "event_id": "4a76f0b43a14d88942160319:239",
+          "event_seq": 239,
+          "state_revision": 212,
+          "turn_id": "4a76f0b43a14d88942160319:17"
+        },
+        {
+          "seq": 17,
+          "day": 2,
+          "kind": "speech",
+          "text": "5号 AI 5号：我救了4号，却毒了3号——真相在谎言里翻滚，可别让我的遗言变成你们的迷局！",
+          "player_id": 5,
+          "speech": "我救了4号，却毒了3号——真相在谎言里翻滚，可别让我的遗言变成你们的迷局！",
+          "event_id": "4a76f0b43a14d88942160319:258",
+          "event_seq": 258,
+          "state_revision": 230,
+          "turn_id": "4a76f0b43a14d88942160319:18"
+        },
+        {
+          "seq": 18,
+          "day": 2,
+          "kind": "speech",
+          "text": "1号 实测玩家1：4号跳预言家查我，5号却称救了4号——女巫与预言家身份冲突，且3、5双死需深究逻辑。",
+          "player_id": 1,
+          "speech": "4号跳预言家查我，5号却称救了4号——女巫与预言家身份冲突，且3、5双死需深究逻辑。",
+          "event_id": "4a76f0b43a14d88942160319:275",
+          "event_seq": 275,
+          "state_revision": 246,
+          "turn_id": "4a76f0b43a14d88942160319:19"
+        },
+        {
+          "seq": 19,
+          "day": 2,
+          "kind": "speech",
+          "text": "2号 AI 2号：3号和5号双死！4号跳预言家查1号，5号却说救了4号——逻辑硬冲突，必须严查！",
+          "player_id": 2,
+          "speech": "3号和5号双死！4号跳预言家查1号，5号却说救了4号——逻辑硬冲突，必须严查！",
+          "event_id": "4a76f0b43a14d88942160319:293",
+          "event_seq": 293,
+          "state_revision": 263,
+          "turn_id": "4a76f0b43a14d88942160319:20"
+        },
+        {
+          "seq": 20,
+          "day": 2,
+          "kind": "speech",
+          "text": "6号 AI 6号：昨夜双死，5号自称女巫却与平安夜矛盾。建议严查其身份，同时聚焦2号发言逻辑，避免误放真狼。",
+          "player_id": 6,
+          "speech": "昨夜双死，5号自称女巫却与平安夜矛盾。建议严查其身份，同时聚焦2号发言逻辑，避免误放真狼。",
+          "event_id": "4a76f0b43a14d88942160319:312",
+          "event_seq": 312,
+          "state_revision": 281,
+          "turn_id": "4a76f0b43a14d88942160319:21"
+        },
+        {
+          "seq": 21,
+          "day": 2,
+          "kind": "system",
+          "text": "所有玩家发言完毕，开始投票。提交后仅显示已投状态，结束时公布票型。",
+          "player_id": null,
+          "event_id": "4a76f0b43a14d88942160319:315",
+          "event_seq": 315,
+          "state_revision": 284,
+          "turn_id": "4a76f0b43a14d88942160319:21"
+        },
+        {
+          "seq": 22,
+          "day": 2,
+          "kind": "vote",
+          "text": "投票结果：1→2；2→1；6→2。",
+          "player_id": null,
+          "votes": {
+            "2": 1,
+            "1": 2,
+            "6": 2
+          },
+          "event_id": "4a76f0b43a14d88942160319:327",
+          "event_seq": 327,
+          "state_revision": 296,
+          "turn_id": "4a76f0b43a14d88942160319:22"
+        },
+        {
+          "seq": 23,
+          "day": 2,
+          "kind": "death",
+          "text": "2号被放逐。",
+          "player_id": null,
+          "event_id": "4a76f0b43a14d88942160319:329",
+          "event_seq": 329,
+          "state_revision": 299,
+          "turn_id": "4a76f0b43a14d88942160319:22"
+        },
+        {
+          "seq": 24,
+          "day": 2,
+          "kind": "game_over",
+          "text": "狼人阵营获胜。",
+          "player_id": null,
+          "event_id": "4a76f0b43a14d88942160319:332",
+          "event_seq": 332,
+          "state_revision": 302,
+          "turn_id": "4a76f0b43a14d88942160319:23"
+        }
+      ],
+      "agents": [
+        {
+          "seat": 1,
+          "agent_id": "63e5d4a6eb2855dbe75749c668e2d93b",
+          "model_key": "mock:mock",
+          "is_human": true
+        },
+        {
+          "seat": 2,
+          "agent_id": "634f30fe0b955350db9bcafe02b555d3",
+          "model_key": "dashscope:qwen-plus",
+          "is_human": false
+        },
+        {
+          "seat": 3,
+          "agent_id": "0ca90be32d7266c32b9d651b578dd5af",
+          "model_key": "dashscope:qwen-turbo",
+          "is_human": false
+        },
+        {
+          "seat": 4,
+          "agent_id": "4e130c560e2bb4e67a950d03064513d7",
+          "model_key": "dashscope:qwen-max",
+          "is_human": false
+        },
+        {
+          "seat": 5,
+          "agent_id": "96943ad3e7a65be2fc6266de3ce0adb6",
+          "model_key": "dashscope:qwen-flash",
+          "is_human": false
+        },
+        {
+          "seat": 6,
+          "agent_id": "9515cc8cb73f31a95d7aaeb54806dc20",
+          "model_key": "dashscope:qwen3-max",
+          "is_human": false
+        }
+      ],
+      "budget": {
+        "game": {
+          "requests": 37,
+          "tokens": 207706,
+          "input_tokens": 206769,
+          "output_tokens": 937,
+          "estimated_cost": 0.0,
+          "reserved_tokens": 0,
+          "reserved_cost": 0.0,
+          "last_blocked": null
+        },
+        "daily": {
+          "requests": 37,
+          "tokens": 207706,
+          "input_tokens": 206769,
+          "output_tokens": 937,
+          "estimated_cost": 0.0,
+          "reserved_tokens": 0,
+          "reserved_cost": 0.0,
+          "last_blocked": null
+        },
+        "daily_date": "2026-09-30",
+        "limits": {
+          "game_max_requests": 300,
+          "game_token_budget": 500000,
+          "game_cost_budget": 0.0,
+          "daily_token_budget": 2000000,
+          "daily_cost_budget": 0.0,
+          "max_active_rooms": 20
+        },
+        "real_calls_allowed": true,
+        "fallback_reason": null
+      },
+      "private_chat_count": 2
+    }
+  ]
+}

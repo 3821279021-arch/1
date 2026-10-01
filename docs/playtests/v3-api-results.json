@@ -1,0 +1,38 @@
+[
+  {
+    "mode": "quick6",
+    "player_count": 6,
+    "winner": "wolves",
+    "days": 3,
+    "elapsed_seconds": 0.715,
+    "events": 154,
+    "review_players": 6
+  },
+  {
+    "mode": "standard9",
+    "player_count": 9,
+    "winner": "wolves",
+    "days": 5,
+    "elapsed_seconds": 4.226,
+    "events": 349,
+    "review_players": 9
+  },
+  {
+    "mode": "standard12",
+    "player_count": 12,
+    "winner": "wolves",
+    "days": 4,
+    "elapsed_seconds": 4.607,
+    "events": 312,
+    "review_players": 12
+  },
+  {
+    "mode": "custom",
+    "player_count": 8,
+    "winner": "good",
+    "days": 2,
+    "elapsed_seconds": 0.485,
+    "events": 137,
+    "review_players": 8
+  }
+]

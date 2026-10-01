@@ -1,0 +1,158 @@
+{
+  "scenario": "30 simulated days, 18 scoped speeches/day; no provider calls",
+  "estimator": "same V2.3 DashScope heuristic for both versions; these are not actual usage values",
+  "samples": [
+    {
+      "day": 1,
+      "v22_estimated_prompt_tokens": 8531,
+      "v23_estimated_prompt_tokens": 5321
+    },
+    {
+      "day": 2,
+      "v22_estimated_prompt_tokens": 14530,
+      "v23_estimated_prompt_tokens": 5323
+    },
+    {
+      "day": 3,
+      "v22_estimated_prompt_tokens": 20529,
+      "v23_estimated_prompt_tokens": 5330
+    },
+    {
+      "day": 4,
+      "v22_estimated_prompt_tokens": 26529,
+      "v23_estimated_prompt_tokens": 5333
+    },
+    {
+      "day": 5,
+      "v22_estimated_prompt_tokens": 32528,
+      "v23_estimated_prompt_tokens": 5339
+    },
+    {
+      "day": 6,
+      "v22_estimated_prompt_tokens": 38527,
+      "v23_estimated_prompt_tokens": 5339
+    },
+    {
+      "day": 7,
+      "v22_estimated_prompt_tokens": 44526,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 8,
+      "v22_estimated_prompt_tokens": 50526,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 9,
+      "v22_estimated_prompt_tokens": 56525,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 10,
+      "v22_estimated_prompt_tokens": 62524,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 11,
+      "v22_estimated_prompt_tokens": 68523,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 12,
+      "v22_estimated_prompt_tokens": 74523,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 13,
+      "v22_estimated_prompt_tokens": 80522,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 14,
+      "v22_estimated_prompt_tokens": 86521,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 15,
+      "v22_estimated_prompt_tokens": 92520,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 16,
+      "v22_estimated_prompt_tokens": 98520,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 17,
+      "v22_estimated_prompt_tokens": 104519,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 18,
+      "v22_estimated_prompt_tokens": 110518,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 19,
+      "v22_estimated_prompt_tokens": 116517,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 20,
+      "v22_estimated_prompt_tokens": 122517,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 21,
+      "v22_estimated_prompt_tokens": 128516,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 22,
+      "v22_estimated_prompt_tokens": 134515,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 23,
+      "v22_estimated_prompt_tokens": 140514,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 24,
+      "v22_estimated_prompt_tokens": 146514,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 25,
+      "v22_estimated_prompt_tokens": 152513,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 26,
+      "v22_estimated_prompt_tokens": 158512,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 27,
+      "v22_estimated_prompt_tokens": 164511,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 28,
+      "v22_estimated_prompt_tokens": 170511,
+      "v23_estimated_prompt_tokens": 5396
+    },
+    {
+      "day": 29,
+      "v22_estimated_prompt_tokens": 176510,
+      "v23_estimated_prompt_tokens": 5290
+    },
+    {
+      "day": 30,
+      "v22_estimated_prompt_tokens": 182509,
+      "v23_estimated_prompt_tokens": 5290
+    }
+  ],
+  "final_prompt_reduction": 0.971,
+  "aggregate_prompt_reduction": 0.9437
+}

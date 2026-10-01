@@ -1,0 +1,82 @@
+{
+  "version": "2.3.0",
+  "verified_at": "2026-10-01T03:40:10.733704+00:00",
+  "unit_tests": {
+    "count": 113,
+    "passed": true,
+    "seconds": 41.743,
+    "retained_tests": 91,
+    "new_tests": 22
+  },
+  "python_compile": true,
+  "js_module_syntax": true,
+  "dependency_check": true,
+  "browser_tests": {
+    "browser_v21": {
+      "browser_errors": [],
+      "widths": [
+        360,
+        390,
+        768,
+        1280
+      ],
+      "event_only_stream": true,
+      "public_and_private_deduplication": true,
+      "optimistic_pet": true,
+      "tts_public_only": true,
+      "tts_seat_profiles": true,
+      "stale_snapshot_rejected": true,
+      "old_game_snapshot_rejected": true,
+      "expired_session_recovery": true,
+      "expired_mutation_not_replayed": true,
+      "action_double_click_requests": 1,
+      "network_retry_reuses_action_id": true,
+      "offline_online_reconnect": true,
+      "wake_lock_release": true,
+      "audibility": "instrumented WebSpeech only; real phone audio requires device validation"
+    },
+    "browser_smoke": {
+      "browser_errors": [],
+      "room_id": "0425646166",
+      "winner": "good",
+      "public_records": 25,
+      "streamed_chunks": 100,
+      "mobile_widths": [
+        360,
+        390,
+        768,
+        1280
+      ]
+    },
+    "browser_v23": {
+      "browser_errors": [],
+      "room_id": "912cb1176a",
+      "lock_password_kick_reopen": true,
+      "cross_device_recovery": true,
+      "old_socket_revoked": true
+    }
+  },
+  "docker": {
+    "version": "2.3.0",
+    "asgi_health": true,
+    "sqlite_room_creation": true,
+    "session_recovery_and_revocation": true
+  },
+  "long_game": {
+    "complete_days": 22,
+    "legal_actions": ">300",
+    "bounded_memory": true
+  },
+  "synthetic_prompt_benchmark": {
+    "days": 30,
+    "aggregate_reduction": 0.9437,
+    "final_reduction": 0.971,
+    "actual_usage": false
+  },
+  "not_measured": [
+    "V2.3 real provider full-game regression",
+    "Chinese estimation median error versus actual usage <20%",
+    "Physical phone screen lock / Wi-Fi-cellular switch / audio"
+  ],
+  "credentials_configured": false
+}

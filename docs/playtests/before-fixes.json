@@ -1,0 +1,1864 @@
+{
+  "model": "qwen-plus",
+  "activity": {
+    "requests": 73,
+    "successes": 70,
+    "failures": 2,
+    "fallbacks": 0,
+    "cancelled": 1,
+    "partial_streams": 0,
+    "tokens": 181311,
+    "last_error": "ReadTimeout"
+  },
+  "packet_counts": {
+    "state_snapshot": 673,
+    "timer_sync": 153,
+    "wolf_chat_message": 8,
+    "phase_changed": 54,
+    "turn_started": 50,
+    "player_action": 6,
+    "chat_message": 50,
+    "private_pet_message": 6,
+    "speech_started": 26,
+    "speech_chunk": 410,
+    "speech_finished": 26,
+    "turn_finished": 26,
+    "vote_started": 4,
+    "vote_submitted": 21,
+    "vote_result": 4,
+    "game_finished": 3
+  },
+  "pet_checks": [
+    {
+      "room": "cf3f665e4f",
+      "before_sequence": 5,
+      "after_sequence": 6,
+      "reply": "已知事实：昨夜平安夜，我（3号）查1号，未获反馈；6号是队友。尚未有任何发言或查验信息。未证实猜测：1号可能为神职（因被查后平安），但无依据。当前最值得追问1号——要求其解释首夜行为逻辑，同时观察2、4、5号对其回应的态度。建议统一施压，避免暴露狼队焦点。"
+    },
+    {
+      "room": "c9dd409f56",
+      "before_sequence": 7,
+      "after_sequence": 7,
+      "reply": "当前最值得追问3号。已知事实：1号死亡，自称预言家并查验2号（我）为好人，但无第三方验证；3号是当前发言者，尚未提供任何信息。未证实猜测：3号身份、是否查验/被查、是否有异常行为——这些均需其发言内容验证。建议请3号明确说明昨夜行动及逻辑依据，避免模糊表述。"
+    },
+    {
+      "room": "267d44911d",
+      "before_sequence": 6,
+      "after_sequence": 6,
+      "reply": "最值得追问2号。已知事实：他是我昨晚的刀口，且平安夜存活；若他非神职，则大概率金水。未证实猜测：他可能是守卫或女巫（挡刀），也可能是狼人自刀骗查杀——但需其发言暴露逻辑矛盾才能佐证。"
+    }
+  ],
+  "model_actions": [
+    {
+      "actor": 3,
+      "action": "wolf_kill",
+      "target": 1,
+      "provider": "dashscope",
+      "latency": 1.665,
+      "data": {
+        "target": 1
+      },
+      "options": [
+        1,
+        2,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 1,
+      "action": "wolf_kill",
+      "target": 2,
+      "provider": "dashscope",
+      "latency": 2.056,
+      "data": {
+        "target": 2
+      },
+      "options": [
+        2,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 4,
+      "action": "wolf_kill",
+      "target": 1,
+      "provider": "dashscope",
+      "latency": 2.007,
+      "data": {
+        "target": 1
+      },
+      "options": [
+        1,
+        2,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 3,
+      "action": "wolf_kill",
+      "target": 2,
+      "provider": "dashscope",
+      "latency": 3.684,
+      "data": {
+        "target": 2
+      },
+      "options": [
+        2,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 6,
+      "action": "wolf_kill",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 4.532,
+      "data": {
+        "action": {
+          "target": 1
+        },
+        "next_steps": [
+          "明早优先听1号发言逻辑与情绪稳定性",
+          "确认3号是否同步发起对1号的质疑",
+          "观察女巫是否救人以反推身份"
+        ],
+        "questions": [
+          "1号首夜是否暴露异常节奏？",
+          "3号狼队友对1号的怀疑依据是什么？"
+        ]
+      },
+      "options": [
+        1,
+        2,
+        4,
+        5
+      ]
+    },
+    {
+      "actor": 3,
+      "action": "wolf_kill",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 5.291,
+      "data": {
+        "action": {
+          "target": 1
+        },
+        "next_steps": [
+          "明日白天观察1号发言逻辑与情绪反应",
+          "同步6号确认是否一致怀疑1号",
+          "准备在首夜投票环节引导归票"
+        ],
+        "questions_to_ask": [
+          "1号为何首夜沉默？是否规避查验？",
+          "6号是否观察到1号有异常手势或延迟？"
+        ]
+      },
+      "options": [
+        1,
+        2,
+        4,
+        5
+      ]
+    },
+    {
+      "actor": 1,
+      "action": "seer_inspect",
+      "target": 3,
+      "provider": "dashscope",
+      "latency": 3.059,
+      "data": {
+        "target": 3
+      },
+      "options": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 1,
+      "action": "seer_inspect",
+      "target": 2,
+      "provider": "dashscope",
+      "latency": 3.123,
+      "data": {
+        "target": 2
+      },
+      "options": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 6,
+      "action": "seer_inspect",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 3.462,
+      "data": {
+        "action": {
+          "target": 1
+        },
+        "next_steps": [
+          "天亮后立即报查验结果；观察1号发言逻辑与反应；要求女巫首夜是否用药；追问2-5号昨夜行动细节"
+        ],
+        "questions": [
+          "女巫是否救人/毒人？",
+          "1号玩家能否自证身份？"
+        ]
+      },
+      "options": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "actor": 4,
+      "action": "witch",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.374,
+      "data": {
+        "save": true,
+        "poison_target": null
+      },
+      "options": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 6,
+      "action": "witch",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 3.291,
+      "data": {
+        "action": {
+          "save": true,
+          "poison_target": null
+        },
+        "command": "首夜必救被刀者1号；明日白天需追问2号（唯一真人）发言逻辑，同步观察3-5号首轮反应。所有人须明确表态是否查验或怀疑他人。",
+        "questions": [
+          "2号，请说明你对1号被刀的初步判断依据？",
+          "3、4、5号，请依次陈述首夜是否获得信息或异常感知？"
+        ]
+      },
+      "options": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "actor": 4,
+      "action": "witch",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 3.815,
+      "data": {
+        "save": true,
+        "poison_target": null
+      },
+      "options": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 3,
+      "action": "pet",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 5.709,
+      "data": {
+        "speech": "已知事实：昨夜平安夜，我（3号）查1号，未获反馈；6号是队友。尚未有任何发言或查验信息。未证实猜测：1号可能为神职（因被查后平安），但无依据。当前最值得追问1号——要求其解释首夜行为逻辑，同时观察2、4、5号对其回应的态度。建议统一施压，避免暴露狼队焦点。"
+      },
+      "options": []
+    },
+    {
+      "actor": 2,
+      "action": "pet",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 3.894,
+      "data": {
+        "speech": "当前最值得追问3号。已知事实：1号死亡，自称预言家并查验2号（我）为好人，但无第三方验证；3号是当前发言者，尚未提供任何信息。未证实猜测：3号身份、是否查验/被查、是否有异常行为——这些均需其发言内容验证。建议请3号明确说明昨夜行动及逻辑依据，避免模糊表述。"
+      },
+      "options": []
+    },
+    {
+      "actor": 1,
+      "action": "pet",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 2.819,
+      "data": {
+        "speech": "最值得追问2号。已知事实：他是我昨晚的刀口，且平安夜存活；若他非神职，则大概率金水。未证实猜测：他可能是守卫或女巫（挡刀），也可能是狼人自刀骗查杀——但需其发言暴露逻辑矛盾才能佐证。"
+      },
+      "options": []
+    },
+    {
+      "actor": 1,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.168,
+      "data": {
+        "vote": 3
+      },
+      "options": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 2,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.69,
+      "data": {
+        "vote": 1
+      },
+      "options": [
+        1,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 4,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 2.256,
+      "data": {
+        "vote": 1,
+        "save": true,
+        "poison_target": null
+      },
+      "options": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 3,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 3.167,
+      "data": {
+        "action": {
+          "type": "vote",
+          "target": 1
+        },
+        "next_step": "推动4、5、6号聚焦1号查验动机与4号救人逻辑矛盾；追问1号是否提前得知3号身份。",
+        "questions": [
+          "1号，请说明首夜查验3号的具体依据？",
+          "4号，为何选择救1号而非观察一晚？"
+        ]
+      },
+      "options": [
+        1,
+        2,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 2,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 2.641,
+      "data": {
+        "vote": {
+          "target": 5
+        }
+      },
+      "options": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 6,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 4.562,
+      "data": {
+        "vote": {
+          "target": 1
+        },
+        "next_action": "统一施压1号解释首夜查验动机，同步观察4号女巫是否跟进质疑；若1号回应模糊，立即引导票型集中。",
+        "questions": [
+          "1号，请明确说明：为何首夜查验3号而非其他高威胁位？",
+          "4号女巫，你救1号的依据是什么？是否掌握额外信息？"
+        ]
+      },
+      "options": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "actor": 4,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 3.483,
+      "data": {
+        "vote": {
+          "target": 5
+        }
+      },
+      "options": [
+        2,
+        3,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 3,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 3.651,
+      "data": {
+        "vote": {
+          "target": 5
+        }
+      },
+      "options": [
+        2,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 5,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 5.693,
+      "data": {
+        "speech": "哎哟——1号预言家查杀3号？4号女巫救1号？这糖衣炮弹裹得也太甜了吧！（拍桌笑）但咱平安夜没死人，狼人却急着被指认——我直觉这‘查杀’像在给谁打掩护！2号吼得最凶，3号喊得最冤，6号问得最细……可5号我呢？心跳快过打鼓，但脑子清醒得很——这票，我得投给最想让我闭嘴的那个！",
+        "vote": 1
+      },
+      "options": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ]
+    },
+    {
+      "actor": 6,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 5.979,
+      "data": {
+        "vote": {
+          "target": 2
+        },
+        "save": false,
+        "poison_target": null
+      },
+      "options": [
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "actor": 5,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 6.707,
+      "data": {
+        "speech": "哎哟～6号女巫一开口就亮身份，还说没用药？（轻笑拍桌）可1号死了啊！你救不救、毒不毒，全凭一张嘴～（突然收声，压低嗓音）不过呢…我信2号！为啥？他没抢跳、没甩锅、更没急着踩人——比某些‘热心女巫’稳多了！（眨眨眼）所以这轮票，我闭眼都投6号！",
+        "vote": 6
+      },
+      "options": [
+        2,
+        3,
+        4,
+        6
+      ]
+    },
+    {
+      "actor": 1,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 0.841,
+      "data": {
+        "vote": 6
+      },
+      "options": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 4,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 0.94,
+      "data": {
+        "vote": {
+          "target": 1
+        }
+      },
+      "options": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 2,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.484,
+      "data": {
+        "vote": 1
+      },
+      "options": [
+        1,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 3,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.744,
+      "data": {
+        "vote": 6
+      },
+      "options": [
+        1,
+        2,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 5,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 4.727,
+      "data": {
+        "speech": "哇哦——6号预言家一锤定音！1号自认是狼，还编刀2号，结果2号活着、4号跳女巫救他……这剧本太丝滑了吧？（突然压低声音）可我好奇啊——4号说‘救了2号’，但没亮药瓶；6号说查1号是狼，也没验人证明……（摊手笑）咱小村民不烧脑，就信票多的！1号悍跳坐实，不投他投谁？来来来，跟票走起～（指尖轻点桌面）",
+        "vote": 1
+      },
+      "options": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ]
+    },
+    {
+      "actor": 6,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 4.737,
+      "data": {
+        "vote": {
+          "target": 1
+        },
+        "next_actions": [
+          "要求1号解释其悍跳逻辑与刀人意图",
+          "追问4号女巫：是否真救2号？若否，为何撒谎？"
+        ],
+        "summary": "已查验1号为狼，其自曝与查验一致，属悍跳。2号被救暂金水，4号跳女巫需验证。当前须聚焦1号矛盾点，压制悍跳节奏。"
+      },
+      "options": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "actor": 6,
+      "action": "wolf_kill",
+      "target": 2,
+      "provider": "dashscope",
+      "latency": 0.843,
+      "data": {
+        "target": 2
+      },
+      "options": [
+        2,
+        4,
+        5
+      ]
+    },
+    {
+      "actor": 3,
+      "action": "wolf_kill",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.026,
+      "data": {
+        "wolf_kill": {
+          "target": 2
+        }
+      },
+      "options": [
+        2,
+        4,
+        5
+      ]
+    },
+    {
+      "actor": 3,
+      "action": "wolf_kill",
+      "target": 5,
+      "provider": "dashscope",
+      "latency": 1.74,
+      "data": {
+        "target": 5
+      },
+      "options": [
+        2,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 6,
+      "action": "seer_inspect",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 4.637,
+      "data": {
+        "action": {
+          "target": 2
+        },
+        "next_steps": [
+          "确认2号是否真金水：若查验为好人，可坐实4号女巫身份；若为狼，则4号大概率是狼队友悍跳",
+          "明日白天需追问4号：为何不报毒？昨夜是否真用解药？",
+          "警惕5号表演性发言——混淆焦点，需限制其带节奏空间"
+        ],
+        "questions": [
+          "4号，请明确：你昨晚是否仅救2号？未使用毒药的原因？",
+          "2号，请说明昨夜行动逻辑及对4号救你的看法。"
+        ]
+      },
+      "options": [
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "actor": 4,
+      "action": "witch",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 2.254,
+      "data": {
+        "save": false,
+        "poison_target": null
+      },
+      "options": [
+        2,
+        3,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 4,
+      "action": "witch",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 2.201,
+      "data": {
+        "save": true,
+        "poison_target": null
+      },
+      "options": [
+        2,
+        3,
+        5,
+        6
+      ]
+    },
+    {
+      "actor": 3,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 1.508,
+      "data": {
+        "vote": 6
+      },
+      "options": [
+        2,
+        4,
+        6
+      ]
+    },
+    {
+      "actor": 2,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 2.531,
+      "data": {
+        "vote": {
+          "target": 6
+        }
+      },
+      "options": [
+        3,
+        4,
+        6
+      ]
+    },
+    {
+      "actor": 4,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 3.747,
+      "data": {
+        "vote": {
+          "target": null
+        }
+      },
+      "options": [
+        2,
+        3,
+        6
+      ]
+    },
+    {
+      "actor": 6,
+      "action": "vote",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 5.011,
+      "data": {
+        "vote": {
+          "target": 4
+        },
+        "next_actions": [
+          "追问4号：请明确报出昨夜是否真救2号，并解释未毒5号的原因；要求2号复述昨夜行动细节；观察3号是否回避关键问题"
+        ],
+        "summary": "已验1狼2金，5号死亡证实狼人刀人。4号跳女巫但未报毒，存在伪神嫌疑；2号被验金水但未自证，需交叉验证；3号持续搅局，发言倾向带偏焦点。当前最可疑为4号——若真女巫，必知救2号是唯一解法，却不敢确认，逻辑断裂。"
+      },
+      "options": [
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "actor": 3,
+      "action": "wolf_kill",
+      "target": 6,
+      "provider": "dashscope",
+      "latency": 2.021,
+      "data": {
+        "target": 6
+      },
+      "options": [
+        4,
+        6
+      ]
+    },
+    {
+      "actor": 4,
+      "action": "witch",
+      "target": null,
+      "provider": "dashscope",
+      "latency": 2.537,
+      "data": {
+        "save": false,
+        "poison_target": 3
+      },
+      "options": [
+        3,
+        6
+      ]
+    }
+  ],
+  "model_speeches": [
+    {
+      "actor": 1,
+      "text": "我是1号预言家，昨晚查验3号是狼人。平安夜说明狼人没刀人，可能在隐藏或误判。请各位结合发言谨慎判断，我将全程理性分析票型与逻辑矛盾。",
+      "latency": 2.308
+    },
+    {
+      "actor": 1,
+      "text": "我是1号预言家，昨晚查验2号是好人。我已倒牌，希望大家信任这个查验结果，重点排查其他五人，尤其注意发言漏洞和票型异常。",
+      "latency": 2.627
+    },
+    {
+      "actor": 2,
+      "text": "1号跳预言家查杀3号？太巧了——平安夜狼人没动手，你却急着甩锅！3号，你敢不敢正面回应？还有4号、5号，昨晚谁在划水？不解释清楚，我直接刀你！",
+      "latency": 1.744
+    },
+    {
+      "actor": 2,
+      "text": "我是2号村民，1号昨晚查验我是好人，但尚未验证。目前仅知1号死亡，无其他信息。请3号起依次发言，重点说明昨夜行为与逻辑依据。",
+      "latency": 1.77
+    },
+    {
+      "actor": 1,
+      "text": "平安夜，说明狼人昨晚没刀人——但我是狼，所以必然有人挡刀或空刀。我昨晚选了2号，若他真被刀应死亡，但他活着，说明要么他金水，要么有神职挡刀。暂不急投，先听其他人发言。",
+      "latency": 8.434
+    },
+    {
+      "actor": 3,
+      "text": "我是3号，昨晚平安夜，1号跳预言家查杀我——但狼人没刀人，他却精准指认，疑点极大。2号质疑合理，我建议先聚焦1号逻辑漏洞：为何首夜急查？是否在混淆视听？请4、5、6号重点回应对1号的信任度。",
+      "latency": 2.622
+    },
+    {
+      "actor": 3,
+      "text": "我是3号，昨晚平安夜，没查验也没被查。1号跳预言家说验2号是好人，但1号已死，真假难辨。我倾向信2号——毕竟他没跳身份，发言也稳。建议先听4号怎么说，再定方向。",
+      "latency": 2.698
+    },
+    {
+      "actor": 2,
+      "text": "1号说“我是狼”——这太假了！平安夜你刀2号？那你怎么没死？立刻报出你的刀人逻辑！3号、4号，你们昨晚干了什么？不解释清楚，我直接踩！",
+      "latency": 3.201
+    },
+    {
+      "actor": 4,
+      "text": "我是4号女巫，昨晚救了1号。平安夜+救1号，说明1号未死，但无法确认其身份。目前无查验信息，暂不站边。请5号、6号说明首夜行为，是否参与讨论或有异常？",
+      "latency": 2.376
+    },
+    {
+      "actor": 4,
+      "text": "我是4号，昨晚平安夜，没查验也没被查。1号跳预言家验2号是好人，但已死亡无法验证；2号自认村民，3号倾向信2号。目前证据不足，建议先听5号、6号发言，再看是否有行为矛盾或逻辑漏洞。",
+      "latency": 2.269
+    },
+    {
+      "actor": 3,
+      "text": "2号急着甩锅，还质疑我——可你连自己昨晚干了啥都不敢说。平安夜，真神职会跳吗？我看你更像悍跳狼。",
+      "latency": 3.214
+    },
+    {
+      "actor": 5,
+      "text": "哎哟——4号女巫救了1号？那1号可真“幸运”啊！（笑）但我得说，平安夜+查杀3号+被救，这剧本也太丝滑了吧？3号你别急着喊冤，2号刚吼完“刀你”，我就汗毛直竖！5号我虽是平民，但心跳比狼人还快～6号大哥，轮到你了，快亮身份压压场子！",
+      "latency": 3.228
+    },
+    {
+      "actor": 5,
+      "text": "哎哟～1号一睁眼就倒牌跳预言家，还验2号是好人？啧啧，我这小心脏扑通扑通的！（拍胸口）但咱得讲逻辑啊——死人说的话，信一半，留一半！2号稳稳当当说“我是村民”，3号立马跟票，4号又打太极…（突然凑近）那我问一句：谁昨晚真平安？谁在装无辜？5号我虽是平民，可眼睛不瞎、耳朵不聋——6号还没开口呢，您说，急不急？（挑眉笑）",
+      "latency": 4.087
+    },
+    {
+      "actor": 4,
+      "text": "我是女巫，昨晚救了2号。平安夜说明刀被挡下，但无法确认2号是否真金水——需听清后续发言再判断。目前无足够依据指向任何人，请大家理性分析。",
+      "latency": 1.482
+    },
+    {
+      "actor": 6,
+      "text": "我是6号，昨晚平安夜，我全程观察：1号跳预言家查杀3号，4号自称女巫救1号，但未验人；2号激烈质疑，3号反向聚焦1号逻辑——这恰恰暴露了1号带队节奏过快。我建议：先统一追问1号，为何首夜急查3号？是否与4号提前串通？请1号正面回应。",
+      "latency": 2.051
+    },
+    {
+      "actor": 6,
+      "text": "我是6号女巫，昨晚未用药。1号死亡，我未救；当前无毒杀记录。2号被查验为好人，但查验未验证。3、4号均称平安夜，5号发言带节奏但无实质信息。请2号明确：若真为好人，能否补充夜间细节？请5号解释“装无辜”具体指谁？所有人注意：下轮投票前，必须厘清身份逻辑链。",
+      "latency": 2.421
+    },
+    {
+      "actor": 5,
+      "text": "哇哦——4号跳女巫救2号？那我可得好好看看！（拍桌笑）2号你急啥呀，人家4号都自爆身份了，你还瞪眼装无辜？3号说你像悍跳狼……哎哟，我这小村民心跳都快了！要不——咱先投个票热热身？（眨眼）",
+      "latency": 2.663
+    },
+    {
+      "actor": 6,
+      "text": "我是预言家，昨晚查验1号为狼人。1号自曝是狼，与我查验一致——他确实在悍跳。2号被救，暂定金水；4号跳女巫，需验证是否真救2号。请1号解释：若你是狼，为何不刀人？刀谁？谁挡刀？请4号明确：你救的是2号，还是另有隐情？",
+      "latency": 4.95
+    },
+    {
+      "actor": 1,
+      "text": "我是1号预言家，查验3号是狼人——这是唯一确定事实。平安夜不刀人，反证狼队在藏或误判；你们质疑我，却无人解释为何5票集中投我、而真狼3号仅获1票。请重审票型逻辑。",
+      "latency": 1.675
+    },
+    {
+      "actor": 1,
+      "text": "我是狼，但6号悍跳预言家查我——他才是真狼。2号被救却不敢自证，4号跳女巫未报毒，逻辑链断裂。请复盘：谁最急？谁在带节奏？真预言家不会首轮就咬死一个已出局者。",
+      "latency": 1.744
+    },
+    {
+      "actor": 5,
+      "text": "（突然捂住胸口，夸张倒吸一口气）哎哟——我这刚躺下就听见自己心跳声！（笑出声）5号是我啊～昨儿个我还拍桌起哄呢，今儿直接躺板板……（停顿，压低声音）但你们真信6号是预言家？他查1号是狼，可1号临死反咬他才是狼……啧啧，这锅甩得比我的命还快！（眨眼）记住咯——死人话，三分真，七分演！",
+      "latency": 2.982
+    },
+    {
+      "actor": 2,
+      "text": "5号刚死，6号预言家查1号是狼——可1号临死反咬6号才是真狼！4号说救我，但没报毒，也没验人！3号全程搅混水，现在5号倒了，你俩谁在藏身份？立刻解释！",
+      "latency": 2.883
+    },
+    {
+      "actor": 3,
+      "text": "（轻笑）2号一开口就急着逼问，可昨晚谁刀了5号？——我倒想问问，6号预言家查1号是狼，结果1号反咬你才是狼，那5号临死前那句“死人话三分真”，到底在暗示谁？4号，你救2号却不敢报毒，是不是怕毒错人？",
+      "latency": 2.084
+    },
+    {
+      "actor": 4,
+      "text": "我是女巫，第1夜救了2号。昨夜5号死亡，我未使用毒药——因无足够依据确认其身份。目前仅知2号被救存活，但无法验证其是否真金水；6号自称预言家查1号为狼，而1号临终反咬6号，矛盾未解。请2号、3号、6号分别说明：昨夜行动及逻辑依据。证据不足前，我不支持任何投票。",
+      "latency": 2.508
+    },
+    {
+      "actor": 6,
+      "text": "我是预言家，第1夜查1号是狼，已验证；第2夜查2号是好人。5号死亡，狼人昨夜刀人，说明4号未毒或不敢毒。请4号明确：你是否真救2号？若真救，为何不报毒？2号请自证昨晚行动。现在必须厘清女巫身份——否则好人将失去唯一解药。",
+      "latency": 2.259
+    },
+    {
+      "actor": 2,
+      "text": "我死了，但真相没死！3号全程搅混水，6号查我金水却不敢验4号——女巫不报毒就是心虚！4号救我不敢毒人，现在5号倒了，你俩狼队还在演？立刻解释昨夜行动！",
+      "latency": 3.314
+    }
+  ],
+  "phases": [
+    {
+      "room": "267d44911d",
+      "phase": "night_discussion",
+      "day": 1,
+      "actor": null,
+      "sequence": 1
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "night_discussion",
+      "day": 1,
+      "actor": null,
+      "sequence": 1
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "night_discussion",
+      "day": 1,
+      "actor": null,
+      "sequence": 1
+    },
+    {
+      "room": "267d44911d",
+      "phase": "night_wolves",
+      "day": 1,
+      "actor": null,
+      "sequence": 2
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "night_wolves",
+      "day": 1,
+      "actor": null,
+      "sequence": 2
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "night_wolves",
+      "day": 1,
+      "actor": null,
+      "sequence": 2
+    },
+    {
+      "room": "267d44911d",
+      "phase": "night_seer",
+      "day": 1,
+      "actor": null,
+      "sequence": 3
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "night_seer",
+      "day": 1,
+      "actor": null,
+      "sequence": 3
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "night_seer",
+      "day": 1,
+      "actor": null,
+      "sequence": 3
+    },
+    {
+      "room": "267d44911d",
+      "phase": "night_witch",
+      "day": 1,
+      "actor": null,
+      "sequence": 4
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "night_witch",
+      "day": 1,
+      "actor": null,
+      "sequence": 4
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "night_witch",
+      "day": 1,
+      "actor": null,
+      "sequence": 4
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 1,
+      "sequence": 5
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "last_words",
+      "day": 1,
+      "actor": 1,
+      "sequence": 5
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 1,
+      "sequence": 5
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 2,
+      "sequence": 6
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 2,
+      "sequence": 6
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 3,
+      "sequence": 7
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 3,
+      "sequence": 7
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 2,
+      "sequence": 6
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 4,
+      "sequence": 8
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 4,
+      "sequence": 8
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 3,
+      "sequence": 7
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 5,
+      "sequence": 9
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 5,
+      "sequence": 9
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 4,
+      "sequence": 8
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 6,
+      "sequence": 10
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 6,
+      "sequence": 10
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 5,
+      "sequence": 9
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "day_vote",
+      "day": 1,
+      "actor": null,
+      "sequence": 11
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "day_vote",
+      "day": 1,
+      "actor": null,
+      "sequence": 11
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_speech",
+      "day": 1,
+      "actor": 6,
+      "sequence": 10
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "last_words",
+      "day": 1,
+      "actor": 1,
+      "sequence": 12
+    },
+    {
+      "room": "c9dd409f56",
+      "phase": "finished",
+      "day": 1,
+      "actor": null,
+      "sequence": 12
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_vote",
+      "day": 1,
+      "actor": null,
+      "sequence": 11
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "night_discussion",
+      "day": 2,
+      "actor": null,
+      "sequence": 13
+    },
+    {
+      "room": "267d44911d",
+      "phase": "last_words",
+      "day": 1,
+      "actor": 1,
+      "sequence": 12
+    },
+    {
+      "room": "267d44911d",
+      "phase": "night_discussion",
+      "day": 2,
+      "actor": null,
+      "sequence": 13
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "night_wolves",
+      "day": 2,
+      "actor": null,
+      "sequence": 14
+    },
+    {
+      "room": "267d44911d",
+      "phase": "night_wolves",
+      "day": 2,
+      "actor": null,
+      "sequence": 14
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "night_seer",
+      "day": 2,
+      "actor": null,
+      "sequence": 15
+    },
+    {
+      "room": "267d44911d",
+      "phase": "night_seer",
+      "day": 2,
+      "actor": null,
+      "sequence": 15
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "night_witch",
+      "day": 2,
+      "actor": null,
+      "sequence": 16
+    },
+    {
+      "room": "267d44911d",
+      "phase": "night_witch",
+      "day": 2,
+      "actor": null,
+      "sequence": 16
+    },
+    {
+      "room": "cf3f665e4f",
+      "phase": "finished",
+      "day": 2,
+      "actor": null,
+      "sequence": 17
+    },
+    {
+      "room": "267d44911d",
+      "phase": "last_words",
+      "day": 2,
+      "actor": 5,
+      "sequence": 17
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_speech",
+      "day": 2,
+      "actor": 2,
+      "sequence": 18
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_speech",
+      "day": 2,
+      "actor": 3,
+      "sequence": 19
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_speech",
+      "day": 2,
+      "actor": 4,
+      "sequence": 20
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_speech",
+      "day": 2,
+      "actor": 6,
+      "sequence": 21
+    },
+    {
+      "room": "267d44911d",
+      "phase": "day_vote",
+      "day": 2,
+      "actor": null,
+      "sequence": 22
+    },
+    {
+      "room": "267d44911d",
+      "phase": "last_words",
+      "day": 2,
+      "actor": 2,
+      "sequence": 23
+    },
+    {
+      "room": "267d44911d",
+      "phase": "night_discussion",
+      "day": 3,
+      "actor": null,
+      "sequence": 24
+    },
+    {
+      "room": "267d44911d",
+      "phase": "night_wolves",
+      "day": 3,
+      "actor": null,
+      "sequence": 25
+    },
+    {
+      "room": "267d44911d",
+      "phase": "night_seer",
+      "day": 3,
+      "actor": null,
+      "sequence": 26
+    },
+    {
+      "room": "267d44911d",
+      "phase": "night_witch",
+      "day": 3,
+      "actor": null,
+      "sequence": 27
+    }
+  ],
+  "games": [
+    {
+      "room_id": "267d44911d",
+      "game_id": "94c2360d07713a2b7bdbbaac",
+      "winner": "good",
+      "completed": true,
+      "day": 3,
+      "elapsed_seconds": 254.3,
+      "events": [
+        {
+          "seq": 1,
+          "day": 1,
+          "kind": "system",
+          "text": "实测玩家1 加入了 1 号座位。",
+          "player_id": null
+        },
+        {
+          "seq": 2,
+          "day": 1,
+          "kind": "system",
+          "text": "身份牌已私下发放。天黑请闭眼。",
+          "player_id": null
+        },
+        {
+          "seq": 3,
+          "day": 1,
+          "kind": "death",
+          "text": "天亮了，昨夜是平安夜。",
+          "player_id": null
+        },
+        {
+          "seq": 4,
+          "day": 1,
+          "kind": "speech",
+          "text": "1号 实测玩家1：平安夜，说明狼人昨晚没刀人——但我是狼，所以必然有人挡刀或空刀。我昨晚选了2号，若他真被刀应死亡，但他活着，说明要么他金水，要么有神职挡刀。暂不急投，先听其他人发言。",
+          "player_id": 1,
+          "speech": "平安夜，说明狼人昨晚没刀人——但我是狼，所以必然有人挡刀或空刀。我昨晚选了2号，若他真被刀应死亡，但他活着，说明要么他金水，要么有神职挡刀。暂不急投，先听其他人发言。"
+        },
+        {
+          "seq": 5,
+          "day": 1,
+          "kind": "speech",
+          "text": "2号 AI 2号：1号说“我是狼”——这太假了！平安夜你刀2号？那你怎么没死？立刻报出你的刀人逻辑！3号、4号，你们昨晚干了什么？不解释清楚，我直接踩！",
+          "player_id": 2,
+          "speech": "1号说“我是狼”——这太假了！平安夜你刀2号？那你怎么没死？立刻报出你的刀人逻辑！3号、4号，你们昨晚干了什么？不解释清楚，我直接踩！"
+        },
+        {
+          "seq": 6,
+          "day": 1,
+          "kind": "speech",
+          "text": "3号 AI 3号：2号急着甩锅，还质疑我——可你连自己昨晚干了啥都不敢说。平安夜，真神职会跳吗？我看你更像悍跳狼。",
+          "player_id": 3,
+          "speech": "2号急着甩锅，还质疑我——可你连自己昨晚干了啥都不敢说。平安夜，真神职会跳吗？我看你更像悍跳狼。"
+        },
+        {
+          "seq": 7,
+          "day": 1,
+          "kind": "speech",
+          "text": "4号 AI 4号：我是女巫，昨晚救了2号。平安夜说明刀被挡下，但无法确认2号是否真金水——需听清后续发言再判断。目前无足够依据指向任何人，请大家理性分析。",
+          "player_id": 4,
+          "speech": "我是女巫，昨晚救了2号。平安夜说明刀被挡下，但无法确认2号是否真金水——需听清后续发言再判断。目前无足够依据指向任何人，请大家理性分析。"
+        },
+        {
+          "seq": 8,
+          "day": 1,
+          "kind": "speech",
+          "text": "5号 AI 5号：哇哦——4号跳女巫救2号？那我可得好好看看！（拍桌笑）2号你急啥呀，人家4号都自爆身份了，你还瞪眼装无辜？3号说你像悍跳狼……哎哟，我这小村民心跳都快了！要不——咱先投个票热热身？（眨眼）",
+          "player_id": 5,
+          "speech": "哇哦——4号跳女巫救2号？那我可得好好看看！（拍桌笑）2号你急啥呀，人家4号都自爆身份了，你还瞪眼装无辜？3号说你像悍跳狼……哎哟，我这小村民心跳都快了！要不——咱先投个票热热身？（眨眼）"
+        },
+        {
+          "seq": 9,
+          "day": 1,
+          "kind": "speech",
+          "text": "6号 AI 6号：我是预言家，昨晚查验1号为狼人。1号自曝是狼，与我查验一致——他确实在悍跳。2号被救，暂定金水；4号跳女巫，需验证是否真救2号。请1号解释：若你是狼，为何不刀人？刀谁？谁挡刀？请4号明确：你救的是2号，还是另有隐情？",
+          "player_id": 6,
+          "speech": "我是预言家，昨晚查验1号为狼人。1号自曝是狼，与我查验一致——他确实在悍跳。2号被救，暂定金水；4号跳女巫，需验证是否真救2号。请1号解释：若你是狼，为何不刀人？刀谁？谁挡刀？请4号明确：你救的是2号，还是另有隐情？"
+        },
+        {
+          "seq": 10,
+          "day": 1,
+          "kind": "system",
+          "text": "所有玩家发言完毕，开始投票。提交后仅显示已投状态，结束时公布票型。",
+          "player_id": null
+        },
+        {
+          "seq": 11,
+          "day": 1,
+          "kind": "vote",
+          "text": "投票结果：1→2；2→1；3→1；4→1；5→1；6→1。",
+          "player_id": null,
+          "votes": {
+            "1": 2,
+            "4": 1,
+            "2": 1,
+            "3": 1,
+            "5": 1,
+            "6": 1
+          }
+        },
+        {
+          "seq": 12,
+          "day": 1,
+          "kind": "death",
+          "text": "1号被放逐。",
+          "player_id": null
+        },
+        {
+          "seq": 13,
+          "day": 1,
+          "kind": "speech",
+          "text": "1号 实测玩家1：我是狼，但6号悍跳预言家查我——他才是真狼。2号被救却不敢自证，4号跳女巫未报毒，逻辑链断裂。请复盘：谁最急？谁在带节奏？真预言家不会首轮就咬死一个已出局者。",
+          "player_id": 1,
+          "speech": "我是狼，但6号悍跳预言家查我——他才是真狼。2号被救却不敢自证，4号跳女巫未报毒，逻辑链断裂。请复盘：谁最急？谁在带节奏？真预言家不会首轮就咬死一个已出局者。"
+        },
+        {
+          "seq": 14,
+          "day": 2,
+          "kind": "system",
+          "text": "第 2 夜开始。",
+          "player_id": null
+        },
+        {
+          "seq": 15,
+          "day": 2,
+          "kind": "death",
+          "text": "天亮了，昨夜死亡：5号。",
+          "player_id": null
+        },
+        {
+          "seq": 16,
+          "day": 2,
+          "kind": "speech",
+          "text": "5号 AI 5号：（突然捂住胸口，夸张倒吸一口气）哎哟——我这刚躺下就听见自己心跳声！（笑出声）5号是我啊～昨儿个我还拍桌起哄呢，今儿直接躺板板……（停顿，压低声音）但你们真信6号是预言家？他查1号是狼，可1号临死反咬他才是狼……啧啧，这锅甩得比我的命还快！（眨眼）记住咯——死人话，三分真，七分演！",
+          "player_id": 5,
+          "speech": "（突然捂住胸口，夸张倒吸一口气）哎哟——我这刚躺下就听见自己心跳声！（笑出声）5号是我啊～昨儿个我还拍桌起哄呢，今儿直接躺板板……（停顿，压低声音）但你们真信6号是预言家？他查1号是狼，可1号临死反咬他才是狼……啧啧，这锅甩得比我的命还快！（眨眼）记住咯——死人话，三分真，七分演！"
+        },
+        {
+          "seq": 17,
+          "day": 2,
+          "kind": "speech",
+          "text": "2号 AI 2号：5号刚死，6号预言家查1号是狼——可1号临死反咬6号才是真狼！4号说救我，但没报毒，也没验人！3号全程搅混水，现在5号倒了，你俩谁在藏身份？立刻解释！",
+          "player_id": 2,
+          "speech": "5号刚死，6号预言家查1号是狼——可1号临死反咬6号才是真狼！4号说救我，但没报毒，也没验人！3号全程搅混水，现在5号倒了，你俩谁在藏身份？立刻解释！"
+        },
+        {
+          "seq": 18,
+          "day": 2,
+          "kind": "speech",
+          "text": "3号 AI 3号：（轻笑）2号一开口就急着逼问，可昨晚谁刀了5号？——我倒想问问，6号预言家查1号是狼，结果1号反咬你才是狼，那5号临死前那句“死人话三分真”，到底在暗示谁？4号，你救2号却不敢报毒，是不是怕毒错人？",
+          "player_id": 3,
+          "speech": "（轻笑）2号一开口就急着逼问，可昨晚谁刀了5号？——我倒想问问，6号预言家查1号是狼，结果1号反咬你才是狼，那5号临死前那句“死人话三分真”，到底在暗示谁？4号，你救2号却不敢报毒，是不是怕毒错人？"
+        },
+        {
+          "seq": 19,
+          "day": 2,
+          "kind": "speech",
+          "text": "4号 AI 4号：我是女巫，第1夜救了2号。昨夜5号死亡，我未使用毒药——因无足够依据确认其身份。目前仅知2号被救存活，但无法验证其是否真金水；6号自称预言家查1号为狼，而1号临终反咬6号，矛盾未解。请2号、3号、6号分别说明：昨夜行动及逻辑依据。证据不足前，我不支持任何投票。",
+          "player_id": 4,
+          "speech": "我是女巫，第1夜救了2号。昨夜5号死亡，我未使用毒药——因无足够依据确认其身份。目前仅知2号被救存活，但无法验证其是否真金水；6号自称预言家查1号为狼，而1号临终反咬6号，矛盾未解。请2号、3号、6号分别说明：昨夜行动及逻辑依据。证据不足前，我不支持任何投票。"
+        },
+        {
+          "seq": 20,
+          "day": 2,
+          "kind": "speech",
+          "text": "6号 AI 6号：我是预言家，第1夜查1号是狼，已验证；第2夜查2号是好人。5号死亡，狼人昨夜刀人，说明4号未毒或不敢毒。请4号明确：你是否真救2号？若真救，为何不报毒？2号请自证昨晚行动。现在必须厘清女巫身份——否则好人将失去唯一解药。",
+          "player_id": 6,
+          "speech": "我是预言家，第1夜查1号是狼，已验证；第2夜查2号是好人。5号死亡，狼人昨夜刀人，说明4号未毒或不敢毒。请4号明确：你是否真救2号？若真救，为何不报毒？2号请自证昨晚行动。现在必须厘清女巫身份——否则好人将失去唯一解药。"
+        },
+        {
+          "seq": 21,
+          "day": 2,
+          "kind": "system",
+          "text": "所有玩家发言完毕，开始投票。提交后仅显示已投状态，结束时公布票型。",
+          "player_id": null
+        },
+        {
+          "seq": 22,
+          "day": 2,
+          "kind": "vote",
+          "text": "投票结果：2→3；3→2；4→2；6→2。",
+          "player_id": null,
+          "votes": {
+            "3": 2,
+            "2": 3,
+            "4": 2,
+            "6": 2
+          }
+        },
+        {
+          "seq": 23,
+          "day": 2,
+          "kind": "death",
+          "text": "2号被放逐。",
+          "player_id": null
+        },
+        {
+          "seq": 24,
+          "day": 2,
+          "kind": "speech",
+          "text": "2号 AI 2号：我死了，但真相没死！3号全程搅混水，6号查我金水却不敢验4号——女巫不报毒就是心虚！4号救我不敢毒人，现在5号倒了，你俩狼队还在演？立刻解释昨夜行动！",
+          "player_id": 2,
+          "speech": "我死了，但真相没死！3号全程搅混水，6号查我金水却不敢验4号——女巫不报毒就是心虚！4号救我不敢毒人，现在5号倒了，你俩狼队还在演？立刻解释昨夜行动！"
+        },
+        {
+          "seq": 25,
+          "day": 3,
+          "kind": "system",
+          "text": "第 3 夜开始。",
+          "player_id": null
+        },
+        {
+          "seq": 26,
+          "day": 3,
+          "kind": "death",
+          "text": "天亮了，昨夜死亡：3号、6号。",
+          "player_id": null
+        },
+        {
+          "seq": 27,
+          "day": 3,
+          "kind": "game_over",
+          "text": "好人阵营获胜。",
+          "player_id": null
+        }
+      ],
+      "private_chat_count": 2
+    },
+    {
+      "room_id": "c9dd409f56",
+      "game_id": "190d180b446539e48974bf60",
+      "winner": "wolves",
+      "completed": true,
+      "day": 1,
+      "elapsed_seconds": 254.3,
+      "events": [
+        {
+          "seq": 1,
+          "day": 1,
+          "kind": "system",
+          "text": "实测玩家2 加入了 2 号座位。",
+          "player_id": null
+        },
+        {
+          "seq": 2,
+          "day": 1,
+          "kind": "system",
+          "text": "身份牌已私下发放。天黑请闭眼。",
+          "player_id": null
+        },
+        {
+          "seq": 3,
+          "day": 1,
+          "kind": "death",
+          "text": "天亮了，昨夜死亡：1号。",
+          "player_id": null
+        },
+        {
+          "seq": 4,
+          "day": 1,
+          "kind": "speech",
+          "text": "1号 AI 1号：我是1号预言家，昨晚查验2号是好人。我已倒牌，希望大家信任这个查验结果，重点排查其他五人，尤其注意发言漏洞和票型异常。",
+          "player_id": 1,
+          "speech": "我是1号预言家，昨晚查验2号是好人。我已倒牌，希望大家信任这个查验结果，重点排查其他五人，尤其注意发言漏洞和票型异常。"
+        },
+        {
+          "seq": 5,
+          "day": 1,
+          "kind": "speech",
+          "text": "2号 实测玩家2：我是2号村民，1号昨晚查验我是好人，但尚未验证。目前仅知1号死亡，无其他信息。请3号起依次发言，重点说明昨夜行为与逻辑依据。",
+          "player_id": 2,
+          "speech": "我是2号村民，1号昨晚查验我是好人，但尚未验证。目前仅知1号死亡，无其他信息。请3号起依次发言，重点说明昨夜行为与逻辑依据。"
+        },
+        {
+          "seq": 6,
+          "day": 1,
+          "kind": "speech",
+          "text": "3号 AI 3号：我是3号，昨晚平安夜，没查验也没被查。1号跳预言家说验2号是好人，但1号已死，真假难辨。我倾向信2号——毕竟他没跳身份，发言也稳。建议先听4号怎么说，再定方向。",
+          "player_id": 3,
+          "speech": "我是3号，昨晚平安夜，没查验也没被查。1号跳预言家说验2号是好人，但1号已死，真假难辨。我倾向信2号——毕竟他没跳身份，发言也稳。建议先听4号怎么说，再定方向。"
+        },
+        {
+          "seq": 7,
+          "day": 1,
+          "kind": "speech",
+          "text": "4号 AI 4号：我是4号，昨晚平安夜，没查验也没被查。1号跳预言家验2号是好人，但已死亡无法验证；2号自认村民，3号倾向信2号。目前证据不足，建议先听5号、6号发言，再看是否有行为矛盾或逻辑漏洞。",
+          "player_id": 4,
+          "speech": "我是4号，昨晚平安夜，没查验也没被查。1号跳预言家验2号是好人，但已死亡无法验证；2号自认村民，3号倾向信2号。目前证据不足，建议先听5号、6号发言，再看是否有行为矛盾或逻辑漏洞。"
+        },
+        {
+          "seq": 8,
+          "day": 1,
+          "kind": "speech",
+          "text": "5号 AI 5号：哎哟～1号一睁眼就倒牌跳预言家，还验2号是好人？啧啧，我这小心脏扑通扑通的！（拍胸口）但咱得讲逻辑啊——死人说的话，信一半，留一半！2号稳稳当当说“我是村民”，3号立马跟票，4号又打太极…（突然凑近）那我问一句：谁昨晚真平安？谁在装无辜？5号我虽是平民，可眼睛不瞎、耳朵不聋——6号还没开口呢，您说，急不急？（挑眉笑）",
+          "player_id": 5,
+          "speech": "哎哟～1号一睁眼就倒牌跳预言家，还验2号是好人？啧啧，我这小心脏扑通扑通的！（拍胸口）但咱得讲逻辑啊——死人说的话，信一半，留一半！2号稳稳当当说“我是村民”，3号立马跟票，4号又打太极…（突然凑近）那我问一句：谁昨晚真平安？谁在装无辜？5号我虽是平民，可眼睛不瞎、耳朵不聋——6号还没开口呢，您说，急不急？（挑眉笑）"
+        },
+        {
+          "seq": 9,
+          "day": 1,
+          "kind": "speech",
+          "text": "6号 AI 6号：我是6号女巫，昨晚未用药。1号死亡，我未救；当前无毒杀记录。2号被查验为好人，但查验未验证。3、4号均称平安夜，5号发言带节奏但无实质信息。请2号明确：若真为好人，能否补充夜间细节？请5号解释“装无辜”具体指谁？所有人注意：下轮投票前，必须厘清身份逻辑链。",
+          "player_id": 6,
+          "speech": "我是6号女巫，昨晚未用药。1号死亡，我未救；当前无毒杀记录。2号被查验为好人，但查验未验证。3、4号均称平安夜，5号发言带节奏但无实质信息。请2号明确：若真为好人，能否补充夜间细节？请5号解释“装无辜”具体指谁？所有人注意：下轮投票前，必须厘清身份逻辑链。"
+        },
+        {
+          "seq": 10,
+          "day": 1,
+          "kind": "system",
+          "text": "所有玩家发言完毕，开始投票。提交后仅显示已投状态，结束时公布票型。",
+          "player_id": null
+        },
+        {
+          "seq": 11,
+          "day": 1,
+          "kind": "vote",
+          "text": "投票结果：2→3；3→2；4→2；5→2；6→2。",
+          "player_id": null,
+          "votes": {
+            "2": 3,
+            "4": 2,
+            "3": 2,
+            "6": 2,
+            "5": 2
+          }
+        },
+        {
+          "seq": 12,
+          "day": 1,
+          "kind": "death",
+          "text": "2号被放逐。",
+          "player_id": null
+        },
+        {
+          "seq": 13,
+          "day": 1,
+          "kind": "game_over",
+          "text": "狼人阵营获胜。",
+          "player_id": null
+        }
+      ],
+      "private_chat_count": 2
+    },
+    {
+      "room_id": "cf3f665e4f",
+      "game_id": "9ce27b12cd8aac915c69024b",
+      "winner": "wolves",
+      "completed": true,
+      "day": 2,
+      "elapsed_seconds": 254.3,
+      "events": [
+        {
+          "seq": 1,
+          "day": 1,
+          "kind": "system",
+          "text": "实测玩家3 加入了 3 号座位。",
+          "player_id": null
+        },
+        {
+          "seq": 2,
+          "day": 1,
+          "kind": "system",
+          "text": "身份牌已私下发放。天黑请闭眼。",
+          "player_id": null
+        },
+        {
+          "seq": 3,
+          "day": 1,
+          "kind": "death",
+          "text": "天亮了，昨夜是平安夜。",
+          "player_id": null
+        },
+        {
+          "seq": 4,
+          "day": 1,
+          "kind": "speech",
+          "text": "1号 AI 1号：我是1号预言家，昨晚查验3号是狼人。平安夜说明狼人没刀人，可能在隐藏或误判。请各位结合发言谨慎判断，我将全程理性分析票型与逻辑矛盾。",
+          "player_id": 1,
+          "speech": "我是1号预言家，昨晚查验3号是狼人。平安夜说明狼人没刀人，可能在隐藏或误判。请各位结合发言谨慎判断，我将全程理性分析票型与逻辑矛盾。"
+        },
+        {
+          "seq": 5,
+          "day": 1,
+          "kind": "speech",
+          "text": "2号 AI 2号：1号跳预言家查杀3号？太巧了——平安夜狼人没动手，你却急着甩锅！3号，你敢不敢正面回应？还有4号、5号，昨晚谁在划水？不解释清楚，我直接刀你！",
+          "player_id": 2,
+          "speech": "1号跳预言家查杀3号？太巧了——平安夜狼人没动手，你却急着甩锅！3号，你敢不敢正面回应？还有4号、5号，昨晚谁在划水？不解释清楚，我直接刀你！"
+        },
+        {
+          "seq": 6,
+          "day": 1,
+          "kind": "speech",
+          "text": "3号 实测玩家3：我是3号，昨晚平安夜，1号跳预言家查杀我——但狼人没刀人，他却精准指认，疑点极大。2号质疑合理，我建议先聚焦1号逻辑漏洞：为何首夜急查？是否在混淆视听？请4、5、6号重点回应对1号的信任度。",
+          "player_id": 3,
+          "speech": "我是3号，昨晚平安夜，1号跳预言家查杀我——但狼人没刀人，他却精准指认，疑点极大。2号质疑合理，我建议先聚焦1号逻辑漏洞：为何首夜急查？是否在混淆视听？请4、5、6号重点回应对1号的信任度。"
+        },
+        {
+          "seq": 7,
+          "day": 1,
+          "kind": "speech",
+          "text": "4号 AI 4号：我是4号女巫，昨晚救了1号。平安夜+救1号，说明1号未死，但无法确认其身份。目前无查验信息，暂不站边。请5号、6号说明首夜行为，是否参与讨论或有异常？",
+          "player_id": 4,
+          "speech": "我是4号女巫，昨晚救了1号。平安夜+救1号，说明1号未死，但无法确认其身份。目前无查验信息，暂不站边。请5号、6号说明首夜行为，是否参与讨论或有异常？"
+        },
+        {
+          "seq": 8,
+          "day": 1,
+          "kind": "speech",
+          "text": "5号 AI 5号：哎哟——4号女巫救了1号？那1号可真“幸运”啊！（笑）但我得说，平安夜+查杀3号+被救，这剧本也太丝滑了吧？3号你别急着喊冤，2号刚吼完“刀你”，我就汗毛直竖！5号我虽是平民，但心跳比狼人还快～6号大哥，轮到你了，快亮身份压压场子！",
+          "player_id": 5,
+          "speech": "哎哟——4号女巫救了1号？那1号可真“幸运”啊！（笑）但我得说，平安夜+查杀3号+被救，这剧本也太丝滑了吧？3号你别急着喊冤，2号刚吼完“刀你”，我就汗毛直竖！5号我虽是平民，但心跳比狼人还快～6号大哥，轮到你了，快亮身份压压场子！"
+        },
+        {
+          "seq": 9,
+          "day": 1,
+          "kind": "speech",
+          "text": "6号 AI 6号：我是6号，昨晚平安夜，我全程观察：1号跳预言家查杀3号，4号自称女巫救1号，但未验人；2号激烈质疑，3号反向聚焦1号逻辑——这恰恰暴露了1号带队节奏过快。我建议：先统一追问1号，为何首夜急查3号？是否与4号提前串通？请1号正面回应。",
+          "player_id": 6,
+          "speech": "我是6号，昨晚平安夜，我全程观察：1号跳预言家查杀3号，4号自称女巫救1号，但未验人；2号激烈质疑，3号反向聚焦1号逻辑——这恰恰暴露了1号带队节奏过快。我建议：先统一追问1号，为何首夜急查3号？是否与4号提前串通？请1号正面回应。"
+        },
+        {
+          "seq": 10,
+          "day": 1,
+          "kind": "system",
+          "text": "所有玩家发言完毕，开始投票。提交后仅显示已投状态，结束时公布票型。",
+          "player_id": null
+        },
+        {
+          "seq": 11,
+          "day": 1,
+          "kind": "vote",
+          "text": "投票结果：1→2；2→1；3→1；4→1；5→1；6→1。",
+          "player_id": null,
+          "votes": {
+            "1": 2,
+            "2": 1,
+            "4": 1,
+            "3": 1,
+            "6": 1,
+            "5": 1
+          }
+        },
+        {
+          "seq": 12,
+          "day": 1,
+          "kind": "death",
+          "text": "1号被放逐。",
+          "player_id": null
+        },
+        {
+          "seq": 13,
+          "day": 1,
+          "kind": "speech",
+          "text": "1号 AI 1号：我是1号预言家，查验3号是狼人——这是唯一确定事实。平安夜不刀人，反证狼队在藏或误判；你们质疑我，却无人解释为何5票集中投我、而真狼3号仅获1票。请重审票型逻辑。",
+          "player_id": 1,
+          "speech": "我是1号预言家，查验3号是狼人——这是唯一确定事实。平安夜不刀人，反证狼队在藏或误判；你们质疑我，却无人解释为何5票集中投我、而真狼3号仅获1票。请重审票型逻辑。"
+        },
+        {
+          "seq": 14,
+          "day": 2,
+          "kind": "system",
+          "text": "第 2 夜开始。",
+          "player_id": null
+        },
+        {
+          "seq": 15,
+          "day": 2,
+          "kind": "death",
+          "text": "天亮了，昨夜死亡：2号。",
+          "player_id": null
+        },
+        {
+          "seq": 16,
+          "day": 2,
+          "kind": "game_over",
+          "text": "狼人阵营获胜。",
+          "player_id": null
+        }
+      ],
+      "private_chat_count": 2
+    }
+  ]
+}

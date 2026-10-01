@@ -4,6 +4,7 @@ Secrets cross this boundary only as internal Credential objects. Public methods
 return explicit allowlists; provider bodies and exception strings are never sent
 back to clients. Temporary credentials are memory-only and scoped to a room.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -16,12 +17,12 @@ import secrets
 import socket
 import sqlite3
 import threading
-from dataclasses import dataclass, field, replace
 from copy import deepcopy
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote, urlsplit, urlunsplit
+from urllib.parse import urlsplit, urlunsplit
 
 import httpx
 from cryptography.fernet import Fernet, InvalidToken
@@ -38,6 +39,7 @@ TRUSTED_HOSTS = {urlsplit(url).hostname for url in PROVIDER_URLS.values()}
 
 class CredentialError(ValueError):
     """A deliberately safe error suitable for an API response."""
+
     def __init__(self, message: str, status_code: int = 400):
         super().__init__(message)
         self.status_code = status_code
@@ -67,21 +69,44 @@ def validate_model_options(options: dict | None) -> dict:
         return {}
     if not isinstance(options, dict):
         raise CredentialError("模型参数须为对象")
-    allowed = {"temperature", "reasoning_effort", "thinking_budget", "enable_thinking", "max_output_tokens"}
+    allowed = {
+        "temperature",
+        "top_p",
+        "seed",
+        "reasoning_effort",
+        "thinking_budget",
+        "enable_thinking",
+        "max_output_tokens",
+    }
     if set(options) - allowed:
-        raise CredentialError("模型参数仅支持 temperature、reasoning_effort、thinking_budget、enable_thinking、max_output_tokens")
+        raise CredentialError(
+            "模型参数仅支持 temperature、top_p、seed、reasoning_effort、thinking_budget、enable_thinking、max_output_tokens"
+        )
     result = dict(options)
     if "temperature" in result:
         value = result["temperature"]
         if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 2:
             raise CredentialError("temperature 必须介于 0 和 2")
-    if "reasoning_effort" in result and (not isinstance(result["reasoning_effort"], str) or result["reasoning_effort"] not in {"none", "minimal", "low", "medium", "high", "xhigh"}):
+    if "reasoning_effort" in result and (
+        not isinstance(result["reasoning_effort"], str)
+        or result["reasoning_effort"] not in {"none", "minimal", "low", "medium", "high", "xhigh"}
+    ):
         raise CredentialError("reasoning_effort 无效")
-    if "thinking_budget" in result and (type(result["thinking_budget"]) is not int or not 0 <= result["thinking_budget"] <= 32768):
+    if "top_p" in result and (
+        type(result["top_p"]) not in (int, float) or not math.isfinite(result["top_p"]) or not 0 <= result["top_p"] <= 1
+    ):
+        raise CredentialError("top_p 必须介于 0 和 1")
+    if "seed" in result and (type(result["seed"]) is not int or not 0 <= result["seed"] < 2**31):
+        raise CredentialError("seed 必须是非负 32 位整数")
+    if "thinking_budget" in result and (
+        type(result["thinking_budget"]) is not int or not 0 <= result["thinking_budget"] <= 32768
+    ):
         raise CredentialError("thinking_budget 必须介于 0 和 32768")
     if "enable_thinking" in result and type(result["enable_thinking"]) is not bool:
         raise CredentialError("enable_thinking 必须为布尔值")
-    if "max_output_tokens" in result and (type(result["max_output_tokens"]) is not int or not 32 <= result["max_output_tokens"] <= 16384):
+    if "max_output_tokens" in result and (
+        type(result["max_output_tokens"]) is not int or not 32 <= result["max_output_tokens"] <= 16384
+    ):
         raise CredentialError("max_output_tokens 必须介于 32 和 16384")
     return result
 
@@ -96,8 +121,15 @@ def normalize_base_url(provider: str, base_url: str | None) -> str:
         port = parsed.port
     except ValueError:
         raise CredentialError("API 地址格式无效") from None
-    if (parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password
-            or parsed.query or parsed.fragment or port not in (None, 443)):
+    if (
+        parsed.scheme != "https"
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+        or port not in (None, 443)
+    ):
         raise CredentialError("API 地址须使用公共 HTTPS 地址，且不得包含用户信息、查询参数或自定义端口")
     host = parsed.hostname.lower()
     if host == "localhost" or host.endswith((".localhost", ".local", ".internal")):
@@ -159,12 +191,20 @@ class Credential:
     revision: int = 1
 
     def public(self) -> dict[str, Any]:
-        return {"id": self.id, "provider": self.provider, "base_url": self.base_url,
-                "masked_label": self.masked_label, "created_at": self.created_at,
-                "last_verified_at": self.last_verified_at, "temporary": self.temporary,
-                "status": "connected" if self.last_verified_at else "unverified",
-                "model_count": len(self.models), "models": list(self.models),
-                "manual_entry_allowed": True, "revision": self.revision}
+        return {
+            "id": self.id,
+            "provider": self.provider,
+            "base_url": self.base_url,
+            "masked_label": self.masked_label,
+            "created_at": self.created_at,
+            "last_verified_at": self.last_verified_at,
+            "temporary": self.temporary,
+            "status": "connected" if self.last_verified_at else "unverified",
+            "model_count": len(self.models),
+            "models": list(self.models),
+            "manual_entry_allowed": True,
+            "revision": self.revision,
+        }
 
 
 def secret_mask(secret: str) -> str:
@@ -214,11 +254,22 @@ async def discover_models(credential: Credential, client: httpx.AsyncClient) -> 
                 continue
             if credential.secret in model_id:
                 continue
-            models[model_id] = {"id": model_id, "model_id": model_id,
-                                "provider": credential.provider,
-                                "display_name": str(item.get("displayName") or item.get("display_name") or model_id).replace(credential.secret, "••••••")[:200],
-                                "source": "discovered"}
-        cursor = body.get("nextPageToken") if credential.provider == "gemini" else body.get("last_id") if body.get("has_more") else None
+            models[model_id] = {
+                "id": model_id,
+                "model_id": model_id,
+                "provider": credential.provider,
+                "display_name": str(item.get("displayName") or item.get("display_name") or model_id).replace(
+                    credential.secret, "••••••"
+                )[:200],
+                "source": "discovered",
+            }
+        cursor = (
+            body.get("nextPageToken")
+            if credential.provider == "gemini"
+            else body.get("last_id")
+            if body.get("has_more")
+            else None
+        )
         if not cursor or len(models) >= 2000:
             break
     return sorted(models.values(), key=lambda model: model["id"])
@@ -227,7 +278,9 @@ async def discover_models(credential: Credential, client: httpx.AsyncClient) -> 
 class CredentialService:
     def __init__(self, db_path: str | Path | None = None, encryption_key: str | bytes | None = None):
         if db_path is None:
-            game_path = Path(os.getenv("DATABASE_PATH", str(Path(__file__).resolve().parent.parent / "data" / "werewolf.sqlite3")))
+            game_path = Path(
+                os.getenv("DATABASE_PATH", str(Path(__file__).resolve().parent.parent / "data" / "werewolf.sqlite3"))
+            )
             db_path = game_path.with_name("credentials.sqlite3")
         self.db_path = str(db_path)
         self._lock = threading.RLock()
@@ -255,7 +308,9 @@ class CredentialService:
             Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(self.db_path, check_same_thread=False)
         self._db.row_factory = sqlite3.Row
-        self._db.execute("CREATE TABLE IF NOT EXISTS credentials (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, provider TEXT NOT NULL, base_url TEXT NOT NULL, encrypted_secret TEXT NOT NULL, masked_label TEXT NOT NULL, created_at TEXT NOT NULL, last_verified_at TEXT, models_json TEXT NOT NULL DEFAULT '[]')")
+        self._db.execute(
+            "CREATE TABLE IF NOT EXISTS credentials (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, provider TEXT NOT NULL, base_url TEXT NOT NULL, encrypted_secret TEXT NOT NULL, masked_label TEXT NOT NULL, created_at TEXT NOT NULL, last_verified_at TEXT, models_json TEXT NOT NULL DEFAULT '[]')"
+        )
         columns = {row[1] for row in self._db.execute("PRAGMA table_info(credentials)")}
         if "revision" not in columns:
             self._db.execute("ALTER TABLE credentials ADD COLUMN revision INTEGER NOT NULL DEFAULT 1")
@@ -273,17 +328,39 @@ class CredentialService:
         if not isinstance(owner_id, str) or not owner_id.strip():
             raise CredentialError("需要用户身份", 401)
 
-    def create(self, owner_id: str, provider: str, secret: str, *, base_url: str | None = None,
-               temporary: bool = False, scope_id: str | None = None) -> dict[str, Any]:
+    def create(
+        self,
+        owner_id: str,
+        provider: str,
+        secret: str,
+        *,
+        base_url: str | None = None,
+        temporary: bool = False,
+        scope_id: str | None = None,
+    ) -> dict[str, Any]:
         self._owner(owner_id)
         provider = normalize_provider(provider)
         base_url = normalize_base_url(provider, base_url)
-        if not isinstance(secret, str) or not secret.strip() or len(secret) > 4096 or any(ord(c) < 33 or ord(c) > 126 for c in secret.strip()):
+        if (
+            not isinstance(secret, str)
+            or not secret.strip()
+            or len(secret) > 4096
+            or any(ord(c) < 33 or ord(c) > 126 for c in secret.strip())
+        ):
             raise CredentialError("API Key 格式无效")
         if temporary and not scope_id:
             raise CredentialError("临时凭据必须绑定当前会话或房间")
-        credential = Credential(secrets.token_urlsafe(18), owner_id, provider, base_url, secret.strip(),
-                                secret_mask(secret.strip()), now(), temporary=temporary, scope_id=scope_id)
+        credential = Credential(
+            secrets.token_urlsafe(18),
+            owner_id,
+            provider,
+            base_url,
+            secret.strip(),
+            secret_mask(secret.strip()),
+            now(),
+            temporary=temporary,
+            scope_id=scope_id,
+        )
         if credential.secret in base_url:
             raise CredentialError("API 地址不得包含 API Key")
         with self._lock:
@@ -291,8 +368,18 @@ class CredentialService:
                 self._temporary[credential.id] = credential
             else:
                 encrypted = self._fernet.encrypt(credential.secret.encode()).decode()
-                self._db.execute("INSERT INTO credentials(id,owner_id,provider,base_url,encrypted_secret,masked_label,created_at) VALUES(?,?,?,?,?,?,?)",
-                                 (credential.id, owner_id, provider, base_url, encrypted, credential.masked_label, credential.created_at))
+                self._db.execute(
+                    "INSERT INTO credentials(id,owner_id,provider,base_url,encrypted_secret,masked_label,created_at) VALUES(?,?,?,?,?,?,?)",
+                    (
+                        credential.id,
+                        owner_id,
+                        provider,
+                        base_url,
+                        encrypted,
+                        credential.masked_label,
+                        credential.created_at,
+                    ),
+                )
                 self._db.commit()
         return credential.public()
 
@@ -304,15 +391,27 @@ class CredentialService:
                 if temporary.owner_id != owner_id or temporary.scope_id not in (scope_id, "session:" + owner_id):
                     raise CredentialError("凭据不存在或无权访问", 404)
                 return replace(temporary, models=deepcopy(temporary.models))
-            row = self._db.execute("SELECT * FROM credentials WHERE id=? AND owner_id=?", (credential_id, owner_id)).fetchone()
+            row = self._db.execute(
+                "SELECT * FROM credentials WHERE id=? AND owner_id=?", (credential_id, owner_id)
+            ).fetchone()
         if not row:
             raise CredentialError("凭据不存在或无权访问", 404)
         try:
             secret = self._fernet.decrypt(row["encrypted_secret"].encode()).decode()
         except (InvalidToken, UnicodeError):
             raise CredentialError("凭据无法解密，请重新添加密钥", 409) from None
-        return Credential(row["id"], owner_id, row["provider"], row["base_url"], secret,
-                          row["masked_label"], row["created_at"], row["last_verified_at"], models=json.loads(row["models_json"]), revision=row["revision"])
+        return Credential(
+            row["id"],
+            owner_id,
+            row["provider"],
+            row["base_url"],
+            secret,
+            row["masked_label"],
+            row["created_at"],
+            row["last_verified_at"],
+            models=json.loads(row["models_json"]),
+            revision=row["revision"],
+        )
 
     def get(self, owner_id: str, credential_id: str, *, scope_id: str | None = None) -> dict[str, Any]:
         return self.resolve(owner_id, credential_id, scope_id=scope_id).public()
@@ -320,34 +419,75 @@ class CredentialService:
     def list(self, owner_id: str, *, scope_id: str | None = None) -> list[dict[str, Any]]:
         self._owner(owner_id)
         with self._lock:
-            rows = self._db.execute("SELECT id,provider,base_url,masked_label,created_at,last_verified_at,models_json,revision FROM credentials WHERE owner_id=? ORDER BY created_at", (owner_id,)).fetchall()
-            result = [{"id": row["id"], "provider": row["provider"], "base_url": row["base_url"],
-                       "masked_label": row["masked_label"], "created_at": row["created_at"],
-                       "last_verified_at": row["last_verified_at"], "temporary": False,
-                       "status": "connected" if row["last_verified_at"] else "unverified",
-                       "models": json.loads(row["models_json"]), "model_count": len(json.loads(row["models_json"])),
-                       "manual_entry_allowed": True, "revision": row["revision"]} for row in rows]
-            result.extend(credential.public() for credential in self._temporary.values()
-                          if credential.owner_id == owner_id and credential.scope_id in (scope_id, "session:" + owner_id))
+            rows = self._db.execute(
+                "SELECT id,provider,base_url,masked_label,created_at,last_verified_at,models_json,revision FROM credentials WHERE owner_id=? ORDER BY created_at",
+                (owner_id,),
+            ).fetchall()
+            result = [
+                {
+                    "id": row["id"],
+                    "provider": row["provider"],
+                    "base_url": row["base_url"],
+                    "masked_label": row["masked_label"],
+                    "created_at": row["created_at"],
+                    "last_verified_at": row["last_verified_at"],
+                    "temporary": False,
+                    "status": "connected" if row["last_verified_at"] else "unverified",
+                    "models": json.loads(row["models_json"]),
+                    "model_count": len(json.loads(row["models_json"])),
+                    "manual_entry_allowed": True,
+                    "revision": row["revision"],
+                }
+                for row in rows
+            ]
+            result.extend(
+                credential.public()
+                for credential in self._temporary.values()
+                if credential.owner_id == owner_id and credential.scope_id in (scope_id, "session:" + owner_id)
+            )
         return result
 
-    def replace(self, owner_id: str, credential_id: str, secret: str, *, base_url: str | None = None,
-                scope_id: str | None = None) -> dict[str, Any]:
+    def replace(
+        self,
+        owner_id: str,
+        credential_id: str,
+        secret: str,
+        *,
+        base_url: str | None = None,
+        scope_id: str | None = None,
+    ) -> dict[str, Any]:
         credential = self.resolve(owner_id, credential_id, scope_id=scope_id)
-        if not isinstance(secret, str) or not secret.strip() or len(secret) > 4096 or any(ord(c) < 33 or ord(c) > 126 for c in secret.strip()):
+        if (
+            not isinstance(secret, str)
+            or not secret.strip()
+            or len(secret) > 4096
+            or any(ord(c) < 33 or ord(c) > 126 for c in secret.strip())
+        ):
             raise CredentialError("API Key 格式无效")
         base_url = normalize_base_url(credential.provider, base_url or credential.base_url)
         if secret.strip() in base_url:
             raise CredentialError("API 地址不得包含 API Key")
         with self._lock:
-            credential.secret, credential.masked_label, credential.base_url = secret.strip(), secret_mask(secret.strip()), base_url
+            credential.secret, credential.masked_label, credential.base_url = (
+                secret.strip(),
+                secret_mask(secret.strip()),
+                base_url,
+            )
             credential.last_verified_at, credential.models = None, []
             credential.revision += 1
             if credential.temporary:
                 self._temporary[credential.id] = credential
             else:
-                self._db.execute("UPDATE credentials SET encrypted_secret=?,masked_label=?,base_url=?,last_verified_at=NULL,models_json='[]',revision=revision+1 WHERE id=? AND owner_id=?",
-                                 (self._fernet.encrypt(credential.secret.encode()).decode(), credential.masked_label, base_url, credential.id, owner_id))
+                self._db.execute(
+                    "UPDATE credentials SET encrypted_secret=?,masked_label=?,base_url=?,last_verified_at=NULL,models_json='[]',revision=revision+1 WHERE id=? AND owner_id=?",
+                    (
+                        self._fernet.encrypt(credential.secret.encode()).decode(),
+                        credential.masked_label,
+                        base_url,
+                        credential.id,
+                        owner_id,
+                    ),
+                )
                 self._db.commit()
         return credential.public()
 
@@ -362,16 +502,30 @@ class CredentialService:
 
     def clear_scope(self, scope_id: str) -> None:
         with self._lock:
-            self._temporary = {key: credential for key, credential in self._temporary.items() if credential.scope_id != scope_id}
+            self._temporary = {
+                key: credential for key, credential in self._temporary.items() if credential.scope_id != scope_id
+            }
 
-    def validate_route(self, owner_id: str, credential_id: str, model_id: str, *, scope_id: str | None = None) -> dict[str, Any]:
+    def validate_route(
+        self, owner_id: str, credential_id: str, model_id: str, *, scope_id: str | None = None
+    ) -> dict[str, Any]:
         credential = self.resolve(owner_id, credential_id, scope_id=scope_id)
-        model_id = validate_model_id(model_id).removeprefix("models/") if credential.provider == "gemini" else validate_model_id(model_id)
+        model_id = (
+            validate_model_id(model_id).removeprefix("models/")
+            if credential.provider == "gemini"
+            else validate_model_id(model_id)
+        )
         if credential.secret in model_id:
             raise CredentialError("模型 ID 不得包含 API Key")
-        return {"credential_id": credential.id, "credential_owner_id": owner_id,
-                "credential_scope_id": scope_id, "provider": credential.provider, "model_id": model_id,
-                "model_key": f"{credential.provider}:{model_id}", "credential_revision": credential.revision}
+        return {
+            "credential_id": credential.id,
+            "credential_owner_id": owner_id,
+            "credential_scope_id": scope_id,
+            "provider": credential.provider,
+            "model_id": model_id,
+            "model_key": f"{credential.provider}:{model_id}",
+            "credential_revision": credential.revision,
+        }
 
     def route_valid(self, owner_id: str, credential_id: str, revision: int, *, scope_id: str | None = None) -> bool:
         try:
@@ -381,18 +535,28 @@ class CredentialService:
 
     def _verified(self, credential: Credential, models: list[dict[str, Any]]):
         with self._lock:
-            if not self.route_valid(credential.owner_id, credential.id, credential.revision, scope_id=credential.scope_id):
+            if not self.route_valid(
+                credential.owner_id, credential.id, credential.revision, scope_id=credential.scope_id
+            ):
                 raise CredentialError("凭据已更新或删除，请重新测试", 409)
             credential.last_verified_at, credential.models = now(), models
             if credential.temporary:
                 self._temporary[credential.id] = credential
             else:
-                self._db.execute("UPDATE credentials SET last_verified_at=?,models_json=? WHERE id=? AND owner_id=?",
-                                 (credential.last_verified_at, json.dumps(models, ensure_ascii=False), credential.id, credential.owner_id))
+                self._db.execute(
+                    "UPDATE credentials SET last_verified_at=?,models_json=? WHERE id=? AND owner_id=?",
+                    (
+                        credential.last_verified_at,
+                        json.dumps(models, ensure_ascii=False),
+                        credential.id,
+                        credential.owner_id,
+                    ),
+                )
                 self._db.commit()
 
-    async def discover(self, owner_id: str, credential_id: str, *, scope_id: str | None = None,
-                       client: httpx.AsyncClient | None = None) -> dict[str, Any]:
+    async def discover(
+        self, owner_id: str, credential_id: str, *, scope_id: str | None = None, client: httpx.AsyncClient | None = None
+    ) -> dict[str, Any]:
         credential = self.resolve(owner_id, credential_id, scope_id=scope_id)
         own_client = client is None
         client = client or httpx.AsyncClient(timeout=15, follow_redirects=False, trust_env=False)
@@ -402,18 +566,41 @@ class CredentialService:
             return {"credential": credential.public(), "models": models, "verified": True, "manual_entry_allowed": True}
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
-            error = "供应商拒绝了密钥，请检查密钥和账号权限" if status in (401, 403) else "供应商未提供可用的模型列表，可手动输入模型 ID"
-            return {"credential": credential.public(), "models": list(credential.models), "verified": False,
-                    "manual_entry_allowed": True, "error": error, "error_code": f"provider_http_{status}"}
+            error = (
+                "供应商拒绝了密钥，请检查密钥和账号权限"
+                if status in (401, 403)
+                else "供应商未提供可用的模型列表，可手动输入模型 ID"
+            )
+            return {
+                "credential": credential.public(),
+                "models": list(credential.models),
+                "verified": False,
+                "manual_entry_allowed": True,
+                "error": error,
+                "error_code": f"provider_http_{status}",
+            }
         except (httpx.HTTPError, ValueError, KeyError, TypeError):
-            return {"credential": credential.public(), "models": list(credential.models), "verified": False,
-                    "manual_entry_allowed": True, "error": "无法获取模型列表，请检查 API 地址和网络后重试", "error_code": "model_discovery_failed"}
+            return {
+                "credential": credential.public(),
+                "models": list(credential.models),
+                "verified": False,
+                "manual_entry_allowed": True,
+                "error": "无法获取模型列表，请检查 API 地址和网络后重试",
+                "error_code": "model_discovery_failed",
+            }
         finally:
             if own_client:
                 await client.aclose()
 
-    async def test(self, owner_id: str, credential_id: str, *, scope_id: str | None = None,
-                   model_id: str | None = None, client: httpx.AsyncClient | None = None) -> dict[str, Any]:
+    async def test(
+        self,
+        owner_id: str,
+        credential_id: str,
+        *,
+        scope_id: str | None = None,
+        model_id: str | None = None,
+        client: httpx.AsyncClient | None = None,
+    ) -> dict[str, Any]:
         result = await self.discover(owner_id, credential_id, scope_id=scope_id, client=client)
         if result["verified"] or not model_id or result.get("error_code") in {"provider_http_401", "provider_http_403"}:
             return result
@@ -423,12 +610,22 @@ class CredentialService:
         client = client or httpx.AsyncClient(timeout=15, follow_redirects=False, trust_env=False)
         try:
             from .providers import connection_probe
+
             await connection_probe(credential, model_id, client)
             self._verified(credential, credential.models)
-            return {"credential": credential.public(), "models": credential.models, "verified": True,
-                    "manual_entry_allowed": True, "probe_model_id": model_id}
+            return {
+                "credential": credential.public(),
+                "models": credential.models,
+                "verified": True,
+                "manual_entry_allowed": True,
+                "probe_model_id": model_id,
+            }
         except (httpx.HTTPError, ValueError, KeyError, TypeError):
-            return {**result, "error": "连接测试失败，请检查模型 ID、密钥和账号权限", "error_code": "connection_test_failed"}
+            return {
+                **result,
+                "error": "连接测试失败，请检查模型 ID、密钥和账号权限",
+                "error_code": "connection_test_failed",
+            }
         finally:
             if own_client:
                 await client.aclose()

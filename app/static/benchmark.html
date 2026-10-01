@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI 狼人杀 · Benchmark</title>
+  <link rel="stylesheet" href="/static/benchmark.css">
+  <script type="module" src="/static/js/benchmark.js"></script>
+</head>
+<body>
+  <main>
+    <nav><a href="/">← 返回游戏</a><span>REPRODUCIBLE ARENA · V3.1</span></nav>
+    <h1>模型实验对比</h1>
+    <p>导入 CLI 生成的 summary.json，查看样本量、阵营与座位分布。文件在当前浏览器中读取。</p>
+    <label class="upload">导入实验结果 <input id="files" type="file" accept=".json,application/json" multiple></label>
+    <p id="message" role="status">尚未导入实验。运行 python -m tools.arena run --config experiments/mock.json 后选择 summary.json。</p>
+    <section id="filters" aria-label="筛选条件"></section>
+    <div id="cards" class="cards"></div>
+    <p id="versions"></p>
+    <h2>模型胜率</h2>
+    <p>胜率的 N 为玩家参与对局次数。同局玩家结果存在相关性，Wilson 95% 区间用于描述样本，不作为模型显著性排名。</p>
+    <div class="table-wrap"><table><thead><tr><th>Agent / Provider / Model</th><th>胜 / N</th><th>胜率</th><th>95% CI</th><th>阵营</th><th>角色</th><th>座位</th><th>Fallback / 调用</th><th>成本估算</th></tr></thead><tbody id="models"></tbody></table></div>
+    <h2>对局状态</h2>
+    <div class="table-wrap"><table><thead><tr><th>实验</th><th>Game</th><th>Seed</th><th>状态</th><th>赢家</th><th>轮数</th><th>错误类别</th></tr></thead><tbody id="games"></tbody></table></div>
+    <p>未知 token 或价格不会转换成免费调用。Mock 仅验证工程流程；其胜率不代表真实模型能力。切换模型等筛选只影响玩家指标，对局状态按实验和状态筛选。</p>
+  </main>
+</body>
+</html>

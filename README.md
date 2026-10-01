@@ -1,8 +1,33 @@
-# 月下狼人杀 · AI 社交推理竞技场 V3
+# 月下狼人杀 · Reproducible Arena V3.1
+
+[English](README_EN.md) · [许可证待所有者选择](LICENSE-DECISION.md) · [Benchmark 使用](docs/benchmark.md)
 
 基于 V2.3.1 重构的多人狼人杀应用。真人可与不同 AI 同桌，通过发言、投票、技能与赛后回放比较模型的社交推理表现。
 
 V3 实现了左右固定玩家头像、中央实时舞台、6/9/12 人和 4～16 人自定义板子、随机入座、完成动作立即推进、本地提示音与独立朗读、用户自带 API（BYOK）、动态模型目录及赛后统计。
+
+V3.1 在现有玩法上增加环境确定性复现、版本化研究导出、无浏览器批跑、换座/配对 seed、断点恢复和跨局指标。
+普通玩家仍使用安全随机，无需输入 seed。云端模型输出不保证逐字一致。
+
+![V3 游戏界面](docs/previews/v3/v3-12-desktop-stage.png)
+
+## 可复现实验
+
+```bash
+python -m tools.arena run --config experiments/mock.json --games 4 --seed 20261001
+# 付费实验先检查计划；实际调用需要相应运行时环境变量：
+python -m tools.arena run --config experiments/qwen-vs-openai.json --games 100 --seed 20261001 --dry-run
+```
+
+输出位于 `artifacts/experiments/<experiment_id>/`，含不可变 manifest、JSONL trace、持久状态和 JSON/CSV 汇总。
+相同配置加 `--resume` 可恢复；需要重试失败局时另加 `--retry-failed`。访问 `/benchmark` 导入 summary.json，文件在本地浏览器读取。
+统计显示 N、Wilson 95% CI、分阵营/角色/座位胜率、token、成本、延迟和 fallback；未知成本保留为空。
+同局玩家结果存在相关性，区间用于描述样本，不作为显著性排名。Mock 只验证工程流程。
+
+当前文档：[复现边界](docs/reproducibility.md)、[Benchmark](docs/benchmark.md)、[V3.1 API](docs/API-V3.1.md)、[开源对照](docs/V3.1-COMPARISON.md)、[验收证据](docs/V3.1-ACCEPTANCE.md)、[贡献指南](CONTRIBUTING.md)、[开发](docs/development.md)、[安全](SECURITY.md)、[更新记录](CHANGELOG.md)、[路线图](ROADMAP.md)。旧版需求和验收证据仍保留在 docs 中。
+
+项目许可证尚待所有者明确选择，当前 LICENSE 不代表已经授予 MIT/Apache-2.0 许可。
+第三方词表继续保留原许可证；见 [第三方声明](THIRD-PARTY-NOTICES.md)。研究 trace 含私有身份/动作，分享前应检查。研究导出只允许原房主下载已结束对局，公开回放权限保持原语义，不保存供应商隐藏思维过程。
 
 ## 运行
 

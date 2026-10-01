@@ -1,0 +1,113 @@
+{
+  "version": "2.3.1",
+  "verified_at": "2026-10-01T09:22:02.104994+00:00",
+  "unit_tests": {
+    "count": 122,
+    "passed": true,
+    "seconds": 67.167,
+    "retained_v23_tests": 113,
+    "new_live_failure_regressions": 9
+  },
+  "python_compile": true,
+  "js_module_syntax": true,
+  "dependency_check": true,
+  "browser_tests": {
+    "browser_v21": {
+      "browser_errors": [],
+      "widths": [
+        360,
+        390,
+        768,
+        1280
+      ],
+      "event_only_stream": true,
+      "public_and_private_deduplication": true,
+      "optimistic_pet": true,
+      "tts_public_only": true,
+      "tts_seat_profiles": true,
+      "stale_snapshot_rejected": true,
+      "old_game_snapshot_rejected": true,
+      "expired_session_recovery": true,
+      "expired_mutation_not_replayed": true,
+      "action_double_click_requests": 1,
+      "network_retry_reuses_action_id": true,
+      "offline_online_reconnect": true,
+      "wake_lock_release": true,
+      "audibility": "instrumented WebSpeech only; real phone audio requires device validation"
+    },
+    "browser_smoke": {
+      "browser_errors": [],
+      "room_id": "9a85675fda",
+      "winner": "wolves",
+      "public_records": 17,
+      "streamed_chunks": 23,
+      "mobile_widths": [
+        360,
+        390,
+        768,
+        1280
+      ]
+    },
+    "browser_v23": {
+      "browser_errors": [],
+      "room_id": "9da19d12bf",
+      "lock_password_kick_reopen": true,
+      "cross_device_recovery": true,
+      "old_socket_revoked": true
+    }
+  },
+  "docker_build": true,
+  "docker": {
+    "version": "2.3.1",
+    "asgi_health": true,
+    "sqlite_room_creation": true,
+    "session_recovery_and_revocation": true
+  },
+  "live_summary": {
+    "version": "2.3.1",
+    "verified_at": "2026-10-01T09:22:02.104994+00:00",
+    "models": [
+      "qwen-plus",
+      "qwen-turbo",
+      "qwen-max",
+      "qwen-flash",
+      "qwen3-max"
+    ],
+    "all_live_http_model_requests": 234,
+    "all_live_reported_usage_tokens": 875630,
+    "billing_note": "Provider usage, not currency or billed price. Injected primary timeouts never sent HTTP and are excluded.",
+    "completed_games": 5,
+    "full_game_model_requests": 176,
+    "full_game_successes": 176,
+    "full_game_failures": 0,
+    "full_game_mock_fallbacks": 0,
+    "full_game_cancelled": 0,
+    "full_game_usage_tokens": 686182,
+    "final_full_game_requests": 29,
+    "final_speech_repairs": {
+      "filtered_sentences": 1,
+      "safe_replacements": 0
+    },
+    "real_backup_completions_after_injected_primary_timeouts": 3,
+    "final_token_samples": 15,
+    "final_token_median_error": 0.1500999999999999,
+    "final_token_max_error": 0.1501999999999999,
+    "final_token_raw_median_error": 0.0,
+    "real_browser_pet_replies": 2,
+    "credential_absent_from_browser": true,
+    "credentials_included": false
+  },
+  "long_game": {
+    "complete_rules_days": 22,
+    "legal_actions": ">300",
+    "bounded_memory": true,
+    "real_model_game_days_max": 3
+  },
+  "not_measured": [
+    "Other providers with real API keys",
+    "Same-condition actual long-game input savings >=30%",
+    "Physical phone screen lock / cellular switching / Safari audio"
+  ],
+  "credential_available_during_authorized_tests": true,
+  "credentials_included": false
+}

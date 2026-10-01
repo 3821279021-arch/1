@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-werewolf/experiment-manifest.schema.json",
+  "title": "AI Werewolf Experiment Manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "experiment_id",
+    "created_at",
+    "app_version",
+    "experiment_seed",
+    "game_count",
+    "ruleset",
+    "agents"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "experiment_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "git_commit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "app_version": {
+      "type": "string"
+    },
+    "experiment_seed": {
+      "type": [
+        "integer",
+        "string"
+      ]
+    },
+    "game_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "ruleset": {
+      "type": "object"
+    },
+    "seat_policy": {
+      "type": "string",
+      "enum": [
+        "fixed",
+        "rotate",
+        "random_seeded"
+      ]
+    },
+    "role_policy": {
+      "type": "string",
+      "enum": [
+        "ruleset_seeded",
+        "fixed_schedule"
+      ]
+    },
+    "prompt_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "agents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "agent_id",
+          "provider",
+          "model"
+        ],
+        "properties": {
+          "agent_id": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": "object"
+          },
+          "prompt_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "environment": {
+      "type": "object"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}
