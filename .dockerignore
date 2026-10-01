@@ -1,0 +1,17 @@
+.venv
+__pycache__
+*.pyc
+.env
+.git
+data
+*.sqlite*
+*.lock
+test-artifacts
+
+.venv
+__pycache__
+test-artifacts
+.git
+*.zip
+!requirements.lock
+!requirements-dev.lock

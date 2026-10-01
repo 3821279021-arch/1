@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c1020"><meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/static/icon-192.png">
+<link rel="stylesheet" href="/static/app.css"><title>月下狼人杀 · AI Werewolf V2.3</title>
+</head>
+<body>
+<div class="app">
+<header class="top"><div><div class="eyebrow">AI WEREWOLF / V2.3</div><h1>🐺 月下狼人杀</h1><p>真人同桌 · AI 玩家 · 你的私人搭档</p></div><span class="connection" id="connection" role="status">正在连接</span></header>
+<div id="notice" class="notice hidden" role="alert"></div>
+<section id="recoveryNotice" class="panel recovery-notice hidden" role="status"><strong>保存身份恢复码</strong><p class="muted">清缓存或换设备后，可用它恢复所有房间和原座位。恢复码使用后会更新，请妥善保管。</p><output id="recoveryDisplay"></output><button id="hideRecovery" class="btn subtle">已保存，隐藏</button></section>
+<section id="entry" class="panel entry">
+<div><h2>今晚，谁藏着另一张面孔？</h2><p class="muted">创建房间，邀请朋友。空座位由 AI 补齐，无需 API Key 即可开玩。</p></div>
+<div class="entry-fields"><label>你的名字<input id="playerName" maxlength="24" value="玩家" autocomplete="nickname"></label><label>座位<select id="seatSelect" aria-label="选择座位"><option value="1">1 号</option><option value="2">2 号</option><option value="3">3 号</option><option value="4">4 号</option><option value="5">5 号</option><option value="6">6 号</option></select></label><label>节奏<select id="paceSelect"><option value="fast">快速 · 发言 15 秒</option><option value="standard" selected>标准 · 发言 30 秒</option><option value="slow">慢速 · 发言 60 秒</option></select></label></div>
+<div class="entry-buttons"><button id="createBtn" class="btn primary">创建房间</button><input id="joinCode" placeholder="朋友的房间号" maxlength="10" aria-label="房间号"><button id="joinBtn" class="btn">加入房间</button></div>
+<details class="session-tools"><summary>身份恢复与会话</summary><label>恢复码<input id="recoveryInput" autocomplete="off" placeholder="已保存的恢复码" maxlength="40"></label><button id="recoverBtn" class="btn">恢复原身份</button><button id="newRecoveryBtn" class="btn subtle">生成新恢复码</button><button id="logoutBtn" class="btn subtle">退出当前会话</button><label>加入密码（可选）<input id="joinPassword" type="password" maxlength="64" autocomplete="off"></label></details>
+<div id="recentRooms" class="recent"></div>
+</section>
+<main id="game" class="hidden">
+<div class="room-bar"><span id="roomLabel"></span><div><button class="btn subtle" id="copyBtn">复制邀请</button><button class="btn subtle" id="homeBtn">我的房间</button></div></div>
+<div id="turnAlert" class="turn-alert hidden" role="status"></div>
+<div class="experience-controls" aria-label="游戏体验设置"><button class="btn subtle" id="audioToggle" aria-pressed="false">开启声音</button><button class="btn subtle" id="audioStop" disabled>停止朗读</button><label class="checkbox"><input type="checkbox" id="vibrationToggle">轮到我时震动</label><label class="checkbox"><input type="checkbox" id="wakeToggle" checked>保持亮屏</label><button id="installBtn" class="btn subtle hidden">安装到主屏幕</button><span id="audioStatus" class="muted" role="status">只朗读公开 AI 发言</span></div>
+<div id="providerStatus" class="provider-status" aria-label="模型可用状态"></div>
+<div class="layout"><section class="panel arena">
+<div class="phase"><div><span class="eyebrow" id="dayText">DAY 1</span><h2 id="phaseText">等待玩家</h2><span class="muted" id="turnText"></span></div><div id="timer" class="timer" aria-label="服务器回合倒计时">—</div></div>
+<div id="winner" class="winner hidden"></div>
+<div class="table-wrap"><div class="table-circle"><div class="moon">☾</div><strong id="tableCaption">等待入座</strong><span>留意每一句发言</span></div><div id="players"></div></div>
+<details id="modelAudit" class="model-audit"><summary>AI 模型运行状态</summary><div id="executionStatus" class="execution-status muted"></div></details>
+<div class="private"><div class="private-top"><strong id="humanRole">身份尚未发放</strong><span id="humanAlive"></span></div><div id="privateNotes" class="notes"></div></div>
+<div id="lobbyControls" class="lobby-controls hidden"><p class="muted">发出邀请后等待朋友加入；开始时自动补齐 AI。</p><details id="aiSettings"><summary>AI 座位设置</summary><label class="checkbox"><input id="uniqueModels" type="checkbox" checked>每个 AI 使用独立真实模型（严格模式）</label><p id="modelWarning" class="model-warning muted">模型数量不足时不能开始；Mock 是明确标识的本地模拟。</p><div id="seatConfigs"></div><button id="saveConfig" class="btn">保存座位设置</button></details><button id="startBtn" class="btn primary full">开始游戏</button></div>
+<div id="lifecycleControls" class="lifecycle-controls hidden"><button id="rematchBtn" class="btn primary">原班人马再来一局</button><button id="closeRoomBtn" class="btn subtle">关闭房间</button></div>
+<details id="roomSecurity" class="room-security hidden"><summary>房主 · 入座管理</summary><button id="lockRoomBtn" class="btn">锁定房间</button><span id="passwordState" class="muted"></span><label>新密码（留空移除）<input id="roomPassword" type="password" maxlength="64" autocomplete="new-password"></label><button id="savePasswordBtn" class="btn subtle">更新密码</button><label>管理座位<select id="moderateSeat"><option value="1">1号</option><option value="2">2号</option><option value="3">3号</option><option value="4">4号</option><option value="5">5号</option><option value="6">6号</option></select></label><button id="moderateSeatBtn" class="btn subtle">移除玩家并禁止重入</button><button id="reopenSeatBtn" class="btn subtle">允许该座原玩家重入</button></details>
+<button id="costReportBtn" class="btn subtle hidden">下载本局模型成本报告</button>
+<div id="humanTurn" class="human-turn hidden"><h3 id="humanPrompt">轮到你了</h3><form id="turnForm" class="turn-form"></form></div>
+<div class="speech-stage"><div class="speech-heading"><span class="live-dot"></span><strong id="speechWho">圆桌现场</strong></div><p id="liveSpeech" aria-live="polite">游戏尚未开始，身份将在服务端随机分配。</p></div>
+<p id="streamStatus" class="stream-status muted hidden" role="status"></p>
+<div id="controlStatus" class="muted control-status"></div>
+</section><aside class="panel history"><div class="history-heading"><h2>公共记录</h2><span id="eventCount" class="muted"></span></div><div id="log" class="log" tabindex="0" aria-label="公开游戏历史"></div>
+<div id="wolfPanel" class="wolf-panel hidden"><h3>🐺 狼队频道</h3><div id="wolfLog" class="wolf-log"></div><form id="wolfForm" class="chat-form"><input id="wolfInput" placeholder="只与你的狼队友讨论" maxlength="500" aria-label="狼队消息"><button class="btn" type="submit">发送</button></form></div></aside></div>
+<div class="game-footer"><p>2 狼人 · 预言家 · 女巫 · 2 村民<br>倒计时由服务器维护，超时自动处理。断线和私人聊天均不暂停游戏。</p><button id="petOpen" class="btn pet-open">🐾 AI 搭档 <span id="petModeBadge">副驾</span></button></div>
+</main>
+</div>
+<div id="petOverlay" class="pet-overlay hidden"></div>
+<aside id="petDrawer" class="pet-drawer hidden" aria-label="私人 AI 搭档">
+<div class="pet-header"><div><span class="eyebrow">ONLY YOU & YOUR PARTNER</span><h2 id="petTitle">🐾 月牙</h2></div><button class="btn" id="petClose" aria-label="关闭搭档聊天">✕</button></div>
+<p class="muted">只有你能看到这段聊天。搭档仅使用你有权知道的信息。</p>
+<label class="checkbox pet-audio-option"><input id="petAudioToggle" type="checkbox">朗读搭档回复（单独授权）</label>
+<div class="pet-settings"><label>性格<select id="petPersonality"></select></label><label>控制模式<select id="petMode"><option value="copilot">副驾 · 由你操作</option><option value="consult">商议 · 私聊分析</option><option value="autopilot">托管 · AI 接管</option></select></label></div>
+<details class="pet-advanced"><summary>搭档偏好与表达风格</summary><label>名字<input id="petName" maxlength="24"></label><label>模型<select id="petProvider"><option value="mock">Mock · 本地试玩</option><option value="dashscope">Qwen · DashScope</option><option value="openai">OpenAI</option><option value="anthropic">Claude</option><option value="gemini">Gemini</option></select></label><label>攻击性<input id="petAggression" type="range" min="0" max="1" step="0.1"></label><label>谨慎程度<input id="petCaution" type="range" min="0" max="1" step="0.1"></label><label>建议长度<select id="adviceLength"><option value="short">简短</option><option value="detailed">详细</option></select></label><button class="btn" id="savePetPrefs">保存偏好</button></details>
+<div class="pet-actions"><button class="btn" id="delegateBtn">代打下一次动作</button><button class="btn" id="takeBackBtn">收回控制权</button></div><div id="petControlInfo" class="muted"></div>
+<div id="petLog" class="pet-log" tabindex="0"></div>
+<div class="quick-questions"><button data-question="当前有哪些已知事实？">已知事实</button><button data-question="给我一个发言草稿建议">发言草稿</button><button data-question="你建议追问什么？">追问建议</button></div>
+<form id="petForm" class="chat-form"><textarea id="petInput" rows="2" maxlength="500" placeholder="别人发言时，也可以来这里商议…" aria-label="给 AI 搭档的消息" required></textarea><button class="btn primary" type="submit" id="petSend">发送</button></form>
+</aside>
+<script type="module" src="/static/app.js"></script>
+</body></html>

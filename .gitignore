@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+data/
+*.sqlite*
+*.lock
+test-artifacts/
+
+.venv/
+test-artifacts/
+*.zip
+!requirements.lock
+!requirements-dev.lock

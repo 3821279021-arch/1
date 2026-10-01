@@ -1,0 +1,21 @@
+{
+  "name": "月下狼人杀 · V2",
+  "short_name": "狼人杀 V2",
+  "description": "真人 + AI 玩家 + 私人 AI 搭档的实时狼人杀房间",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c1020",
+  "theme_color": "#0c1020",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

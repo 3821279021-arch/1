@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: ai-werewolf-v2
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/health
+    disk:
+      name: werewolf-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_PATH
+        value: /var/data/werewolf.sqlite3
+      - key: LLM_TIMEOUT
+        value: "12"
+      - key: LLM_CONCURRENCY
+        value: "4"

@@ -1,0 +1,3 @@
+-c requirements-dev.lock
+-r requirements.txt
+playwright==1.62.0
