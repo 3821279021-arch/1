@@ -1,4 +1,4 @@
-# 月下狼人杀 V2.3
+# 月下狼人杀 V2.3.1
 
 在原 FastAPI 手机网页项目上升级的 **真人 + AI 玩家 + 私人 AI 搭档** 实时狼人杀平台。保留原来的 6 人规则、四家模型路由、Docker、Render 和 PWA。无需 API Key 可以完整游玩。
 
@@ -27,7 +27,7 @@ python run.py
 
 ## V2.3 改进
 
-- Token：OpenAI 使用 tiktoken；其余 Provider 使用经验系数、按实际 Usage 校准与 15% 余量，统一预算入口，不再把中文 UTF-8 字节数作为 Token 数。
+- Token：OpenAI 使用 tiktoken；Qwen 使用随包提供的本地词表，无需运行时下载；其余 Provider 使用经验系数。按实际 Usage 校准并保留 15% 余量，统一预算入口。
 - 记忆：每种历史集合有上限；保留有来源的角色/查验/票型/自身选择摘要，进入新一天生成结构化每日摘要，旧怀疑按天衰减。
 - AI：新增 `GameBeliefState`。默认服务器策略决定动作，模型表达性格；模型不可用时继续使用相同策略。可通过 `AI_STRATEGY_MODE=model` 允许模型在合法范围内选择。
 - 模型：复用 HTTP 连接，统一 Adapter/Result/Usage；OpenAI、Claude、Gemini 使用原生 schema/tool 约束，DashScope 使用 JSON 模式和相同本地动作验证；默认有一次修复重试。
@@ -40,7 +40,7 @@ python run.py
 
 升级及验收说明：[docs/CHANGELOG-V2.3.md](docs/CHANGELOG-V2.3.md)、[docs/VALIDATION-V2.3.md](docs/VALIDATION-V2.3.md)。
 
-合成 30 天场景已证明提示大小趋于稳定；真实 Provider 的 Token 误差与完整实战仍需使用自己的可用 Key 验证，本包未声称完成这些实测。
+V2.3.1 使用用户授权的 DashScope Key 完成 5 局真实对局及修复回归，176 次对局/搭档请求全部成功。真实 Usage 验证的预算估算误差中位数约 15%（包含 15% 安全余量）；122 项自动测试、三套浏览器及 Docker smoke 通过。问题与分批记录见 [真实实测报告](docs/LIVE-PLAYTEST-V2.3.1.md)；其中最终公开发言保护补跑 1 局，其他批次用于定位问题。
 
 ## 保留的 V2.2 功能
 
@@ -75,7 +75,7 @@ python run.py
 
 复制 `.env.example` 为 `.env`，只填写服务器环境变量中的 API Key。前端不会收到 Key。模型名可按你的账号设置；默认 OpenAI `gpt-4.1-mini`、Claude `claude-sonnet-4-20250514`、Gemini `gemini-2.5-flash`、DashScope `qwen-plus`。房主在开始前选择 AI 座位模型；宠物在偏好面板选择自己的模型。
 
-OpenAI Responses、Claude Messages、Gemini streamGenerateContent、DashScope Chat Completions 均接入原生 SSE，仅转发公开发言文本，过滤推理块。未配置模型在大厅不可选；显式 Mock 可离线练习。真实模型先尝试其他健康真实模型，全部不可用或预算耗尽才转 Mock；超过服务器 deadline 的响应会被丢弃。DashScope 已使用真实 Key 做在线实测，记录见 `docs/LIVE-PLAYTEST.md`；其余三家仅完成协议模拟测试。
+OpenAI Responses、Claude Messages、Gemini streamGenerateContent、DashScope Chat Completions 均接入原生 SSE，过滤推理块。公开发言按完整句子校验后发送；预言家的真实查验由服务器准确展示，模型接续表达观点。未配置模型在大厅不可选；显式 Mock 可离线练习。真实模型先尝试其他健康真实模型，全部不可用或预算耗尽才转 Mock；超过服务器 deadline 的响应会被丢弃。DashScope 在线实测见 `docs/LIVE-PLAYTEST-V2.3.1.md`；其余三家仅完成协议模拟测试。
 
 默认并发上限 4，可用 `LLM_CONCURRENCY` 调整。`LLM_TIMEOUT` 控制单次模型超时；`.env.example` 推荐 12 秒。每次真实 HTTP 尝试（包括重试和后备模型）先预留请求、token 及可配置价格的费用额度，再按可获得的 usage 结算。缺少 usage 时保守记账。预算属于本服务，不代表云厂商账户的全部消费；费用估算需配置正确价格。完整配置见 [MODELS-AND-LIMITS.md](docs/MODELS-AND-LIMITS.md)。
 
@@ -149,7 +149,9 @@ V1 的浏览器驱动 `step` 接口已由服务器调度器替代，不支持旧
 
 ## 主动实测（会调用真实 API）
 
-`PYTHONPATH=. LIVE_GAMES=2 python tests/live_dashscope.py` 使用服务器 `.env` 的 DashScope Key，注册上述五个模型，并行跑两局严格独立模型对局，检查真实后备接手、信息边界和私人搭档聊天。它不会被普通 unittest 自动运行；每次最多 250 个模型请求、八分钟。原始实测输出在 `test-artifacts/live-dashscope.json`，其中没有 API Key。
+`PYTHONPATH=. LIVE_GAMES=2 python tests/live_dashscope.py` 使用服务器 `.env` 的 DashScope Key，注册上述五个模型，并行跑两局严格独立模型对局，检查真实后备接手、信息边界和私人搭档聊天。它不会被普通 unittest 自动运行；达到 250 个模型请求阈值会停止，单批时限八分钟。原始实测输出在 `test-artifacts/live-dashscope.json`，其中没有 API Key。
+
+`PYTHONPATH=. python tests/live_v23_checks.py` 用真实接口检查第 1/5/15/30 天合成历史、复杂记忆预算及预言家查验发言。默认仅测 qwen-plus/qwen-turbo/qwen-flash，产生 18 次请求；报告位于 `test-artifacts/v231-live-targeted.json`。Key 可通过环境变量或本地 `.env` 提供，交付包不包含测试密钥。
 
 房间默认五分钟无连接且非进行中则卸载内存；无连接大厅六小时、已结束房间十四天后归档，会话三十天过期。关闭房间保留可授权读取的历史；结束后「再来一局」回到大厅，保留真人席位与 AI 配置，重新生成游戏 ID、身份、Agent 与局内记忆。
 
