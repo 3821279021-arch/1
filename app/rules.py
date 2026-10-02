@@ -167,7 +167,9 @@ class RuleEngine:
             raise ValueError("独立模型设置必须为布尔值")
         profile, custom_performance = validate_performance(
             ai_performance_profile or self.g.ai_performance_profile,
-            ai_performance_custom if ai_performance_profile == "custom" or ai_performance_custom is not None else self.g.ai_performance_custom,
+            ai_performance_custom
+            if ai_performance_profile == "custom" or ai_performance_custom is not None
+            else self.g.ai_performance_custom,
         )
         if not isinstance(seats, list) or any(
             not isinstance(entry, dict) or type(entry.get("id")) is not int for entry in seats
