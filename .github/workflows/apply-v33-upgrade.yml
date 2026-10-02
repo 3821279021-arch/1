@@ -1,0 +1,33 @@
+name: Apply V3.3 upgrade
+on:
+  push:
+    branches:
+      - upgrade-v3.3-20261002
+    paths:
+      - '.upgrade/v33/**'
+      - '.github/workflows/apply-v33-upgrade.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Apply V3.3 patch
+        shell: bash
+        run: |
+          if ! compgen -G ".upgrade/v33/part*.b64" > /dev/null; then
+            echo "Patch parts already cleaned."
+            exit 0
+          fi
+          cat .upgrade/v33/part*.b64 | base64 -d > /tmp/v33.patch
+          git apply --check /tmp/v33.patch
+          git apply /tmp/v33.patch
+          rm -rf .upgrade/v33
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Upgrade AI Werewolf to V3.3.0"
+          git push
