@@ -57,10 +57,7 @@ class PerformanceProfileTests(unittest.TestCase):
 
     def test_ai_view_history_is_profile_controlled(self):
         game, _ = make_game()
-        game.events = [
-            {"event_id": f"e{i}", "audience": "public", "kind": "system", "data": {}}
-            for i in range(30)
-        ]
+        game.events = [{"event_id": f"e{i}", "audience": "public", "kind": "system", "data": {}} for i in range(30)]
         game.ai_performance_profile = "economy"
         compact = InformationScope.ai_view(game, 1)
         self.assertEqual(len(compact["events"]), 8)
