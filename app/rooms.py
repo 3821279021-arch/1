@@ -724,9 +724,7 @@ class RoomManager:
                     )
                 else:
                     provider, personality, style, agent_id = p.model_key or p.provider, p.personality, {}, p.agent_id
-                performance = resolve_performance(
-                    room.game.ai_performance_profile, room.game.ai_performance_custom
-                )
+                performance = resolve_performance(room.game.ai_performance_profile, room.game.ai_performance_custom)
                 model_parameters = profile_model_parameters(performance, getattr(p, "model_options", {}))
                 route_metadata = {
                     "model_parameters": model_parameters,
