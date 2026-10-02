@@ -12,7 +12,8 @@ SUMMARY = ROOT / "test-artifacts/arena/browser-fixture/summary.json"
 checks = []
 
 with sync_playwright() as playwright:
-    browser = playwright.chromium.launch()
+    chromium = os.getenv("CHROMIUM_PATH", "/usr/bin/chromium")
+    browser = playwright.chromium.launch(executable_path=chromium if Path(chromium).exists() else None)
     page = browser.new_page(viewport={"width": 390, "height": 844})
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))

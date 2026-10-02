@@ -7,6 +7,7 @@ from copy import deepcopy
 from dataclasses import asdict
 from typing import Any
 
+from .boards import framework
 from .game import PHASE_NAMES, ROLE_NAMES, WerewolfGame
 from .roles import GAME_MODES, ROLE_DEFINITIONS
 from .rules import RuleEngine
@@ -17,6 +18,8 @@ class InformationScope:
     def player_view(g: WerewolfGame, pid: int) -> dict[str, Any]:
         p = g.player(pid)
         started = g.phase != "lobby"
+        random_board = g.board_policy != "fixed" and not g.game_over
+        visible_roster = list(g.random_role_pool) if random_board else list(g.role_roster)
         # Night actor IDs would disclose who holds a hidden role.
         public_turn = g.current_turn_player_id if g.phase in {"day_speech", "last_words"} else None
         presets = {
@@ -34,20 +37,24 @@ class InformationScope:
             "turn_id": g.turn_id,
             "event_seq": g.event_seq,
             "lifecycle": g.lifecycle,
+            "suspended_remaining": g.suspended_remaining,
             "seat_presets": presets,
             "mode": g.mode,
             "player_count": g.player_count,
-            "role_roster": list(g.role_roster),
+            "board_policy": g.board_policy,
+            "random_role_pool": list(g.random_role_pool),
+            "board_framework": framework(g.player_count) if random_board else None,
+            "role_roster": [] if random_board else list(g.role_roster),
             "game_mode": GAME_MODES[g.mode].public()
             if g.mode in GAME_MODES
             else {
                 "key": "custom",
-                "display_name": "自定义板子",
+                "display_name": "约束随机板" if random_board else "自定义板子",
                 "player_count": g.player_count,
-                "roles": list(g.role_roster),
+                "roles": [] if random_board else list(g.role_roster),
             },
             "rules": {
-                "roles": [ROLE_DEFINITIONS[role].public() for role in dict.fromkeys(g.role_roster)],
+                "roles": [ROLE_DEFINITIONS[role].public() for role in dict.fromkeys(visible_roster)],
                 "victory": "狼阵营全部死亡好人胜；狼人数达到或超过好人数狼人胜。",
                 "voting": "可弃票、不可投自己；最高票平票无人出局。翻牌白痴失去投票权。",
                 "timing": "所有动作完成即推进，倒计时仅为最长等待时间。",
@@ -56,8 +63,8 @@ class InformationScope:
             "has_password": bool(g.password_hash),
             "unique_model_per_ai_seat": g.unique_model_per_ai_seat,
             "day": g.day,
-            "phase": g.phase,
-            "phase_name": PHASE_NAMES[g.phase],
+            "phase": "night" if random_board and g.phase.startswith("night_") else g.phase,
+            "phase_name": "夜间行动" if random_board and g.phase.startswith("night_") else PHASE_NAMES[g.phase],
             "game_over": g.game_over,
             "winner": g.winner,
             "current_turn_player_id": public_turn,
@@ -162,6 +169,14 @@ class InformationScope:
         if not p:
             return False
         return InformationScope.permits_player(g, p.id, event)
+
+    @staticmethod
+    def client_event(g: WerewolfGame, event: dict[str, Any]) -> dict[str, Any]:
+        packet = deepcopy(event)
+        phase = packet.get("data", {}).get("phase", "")
+        if g.board_policy != "fixed" and not g.game_over and phase.startswith("night_"):
+            packet["data"].update(phase="night", phase_name="夜间行动")
+        return packet
 
     @staticmethod
     def permits_player(g: WerewolfGame, pid: int, event: dict[str, Any]) -> bool:

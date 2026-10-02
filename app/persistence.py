@@ -46,6 +46,8 @@ class Store:
         CREATE TABLE IF NOT EXISTS usage_state (id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS experiments (experiment_id TEXT PRIMARY KEY, manifest TEXT NOT NULL, status TEXT NOT NULL, created_at REAL NOT NULL, finished_at REAL);
         CREATE TABLE IF NOT EXISTS experiment_games (experiment_id TEXT NOT NULL, game_id TEXT NOT NULL, game_index INTEGER NOT NULL, game_seed TEXT NOT NULL, status TEXT NOT NULL, result TEXT, attempts INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(experiment_id,game_id));
+        CREATE TABLE IF NOT EXISTS model_preferences (owner_id TEXT PRIMARY KEY, state TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS model_last_calls (owner_id TEXT NOT NULL, route_key TEXT NOT NULL, status TEXT NOT NULL, checked_at REAL NOT NULL, PRIMARY KEY(owner_id,route_key));
         """)
         columns = {row[1] for row in self.db.execute("PRAGMA table_info(identities)")}
         if "recovery_hash" not in columns:
@@ -203,19 +205,28 @@ class Store:
 
     @synchronized
     def archive_expired(
-        self, *, now: float, lobby_seconds: float, finished_seconds: float, exclude: set[str] | None = None
+        self,
+        *,
+        now: float,
+        lobby_seconds: float,
+        finished_seconds: float,
+        suspended_seconds: float = 48 * 3600,
+        exclude: set[str] | None = None,
     ) -> list[str]:
         # Query lifecycle metadata before decoding; no recurring scan of every historical state.
         excluded = sorted(exclude or set())
-        query = "SELECT room_id,state FROM rooms WHERE ((COALESCE(json_extract(state,'$.lifecycle'),'LOBBY')='LOBBY' AND updated_at<?) OR (json_extract(state,'$.lifecycle')='FINISHED' AND COALESCE(json_extract(state,'$.finished_at'),updated_at)<?))"
+        query = "SELECT room_id,state FROM rooms WHERE ((COALESCE(json_extract(state,'$.lifecycle'),'LOBBY')='LOBBY' AND updated_at<?) OR (json_extract(state,'$.lifecycle')='FINISHED' AND COALESCE(json_extract(state,'$.finished_at'),updated_at)<?) OR (json_extract(state,'$.lifecycle')='SUSPENDED' AND COALESCE(json_extract(state,'$.suspended_at'),updated_at)<?))"
         if excluded:
             query += " AND room_id NOT IN (" + ",".join("?" for _ in excluded) + ")"
-        rows = self.db.execute(query, (now - lobby_seconds, now - finished_seconds, *excluded)).fetchall()
+        rows = self.db.execute(
+            query, (now - lobby_seconds, now - finished_seconds, now - suspended_seconds, *excluded)
+        ).fetchall()
         archived = []
         for room_id, encoded in rows:
             g = WerewolfGame.restore(json.loads(encoded))
             g.lifecycle = "ARCHIVED"
             g.archived_at = now
+            g.retention_expires_at = now
             g.state_revision += 1
             self.save(g)
             archived.append(room_id)
@@ -233,8 +244,8 @@ class Store:
             retention_days if retention_days is not None else float(os.getenv("ROOM_ARCHIVED_RETENTION_DAYS", "14"))
         )
         rows = self.db.execute(
-            "SELECT room_id,state FROM rooms WHERE json_extract(state,'$.lifecycle')='ARCHIVED' AND COALESCE(json_extract(state,'$.archived_at'),updated_at)<?",
-            (now - max(1, retention) * 86400,),
+            "SELECT room_id,state FROM rooms WHERE json_extract(state,'$.lifecycle')='ARCHIVED' AND (COALESCE(json_extract(state,'$.archived_at'),updated_at)<? OR json_extract(state,'$.retention_expires_at')<=?)",
+            (now - max(1, retention) * 86400, now),
         ).fetchall()
         purged = []
         with self.db:
@@ -265,11 +276,97 @@ class Store:
 
     @synchronized
     def record_model(self, kind: str, record: dict[str, Any]) -> None:
+        # Cancellation telemetry may settle after a room was purged. Do not
+        # recreate private records for a room whose anonymous tombstone exists.
+        if (
+            record.get("room_id")
+            and self.db.execute("SELECT 1 FROM room_statistics WHERE room_id=?", (record["room_id"],)).fetchone()
+        ):
+            return
         with self.db:
             self.db.execute(
                 "INSERT OR IGNORE INTO model_telemetry VALUES(?,?,?,?,?)",
                 (secrets.token_hex(16), record.get("room_id"), record.get("game_id"), kind, json.dumps(record)),
             )
+            if kind == "call" and record.get("model_key") and record.get("failure_reason") != "cancelled":
+                row = self.db.execute("SELECT state FROM rooms WHERE room_id=?", (record.get("room_id"),)).fetchone()
+                if row:
+                    state = json.loads(row[0])
+                    p = next((p for p in state["players"] if p.get("agent_id") == record.get("agent_id")), None)
+                    pet_owner = next(
+                        (
+                            oid
+                            for oid, pet in state.get("pets", {}).items()
+                            if pet.get("agent_id") == record.get("agent_id")
+                        ),
+                        None,
+                    )
+                    identity = pet_owner or (p or {}).get("credential_owner_id") or state["host_id"]
+                    key = (
+                        f"credential:{p['credential_id']}:{record['model']}"
+                        if p and p.get("credential_id")
+                        else record["model_key"]
+                    )
+                    from .model_preferences import call_status
+
+                    self.remember_model_status(
+                        identity, key, call_status(record.get("success"), record.get("failure_reason"))
+                    )
+
+    @synchronized
+    def model_preferences(self, owner_id: str) -> dict[str, Any]:
+        row = self.db.execute("SELECT state FROM model_preferences WHERE owner_id=?", (owner_id,)).fetchone()
+        result = {"schema_version": 1, "favorites": [], "lineups": [], **(json.loads(row[0]) if row else {})}
+        result["recent"] = [
+            {"key": key, "status": status, "checked_at": checked_at}
+            for key, status, checked_at in self.db.execute(
+                "SELECT route_key,status,checked_at FROM model_last_calls WHERE owner_id=? ORDER BY checked_at DESC LIMIT 200",
+                (owner_id,),
+            )
+        ]
+        return result
+
+    @synchronized
+    def save_model_preferences(self, owner_id: str, value: dict[str, Any]) -> dict[str, Any]:
+        from .model_preferences import validate_preferences
+
+        validated = validate_preferences(value)
+        existing = self.model_preferences(owner_id)
+        saved = {key: validated.get(key, existing[key]) for key in ("favorites", "lineups")}
+        with self.db:
+            self.db.execute(
+                "INSERT OR REPLACE INTO model_preferences VALUES(?,?)",
+                (owner_id, json.dumps(saved, ensure_ascii=False)),
+            )
+        return self.model_preferences(owner_id)
+
+    @synchronized
+    def remember_model_status(self, owner_id: str, key: str, status: str) -> None:
+        with self.db:
+            self.db.execute(
+                "INSERT OR REPLACE INTO model_last_calls VALUES(?,?,?,?)", (owner_id, key, status, time.time())
+            )
+            self.db.execute(
+                "DELETE FROM model_last_calls WHERE owner_id=? AND route_key NOT IN (SELECT route_key FROM model_last_calls WHERE owner_id=? ORDER BY checked_at DESC LIMIT 200)",
+                (owner_id, owner_id),
+            )
+
+    @synchronized
+    def delete_room(self, room_id: str) -> None:
+        row = self.db.execute("SELECT state FROM rooms WHERE room_id=?", (room_id,)).fetchone()
+        if row is None:
+            return
+        state = json.loads(row[0])
+        stats = {
+            "days": state.get("day", 1),
+            "winner": state.get("winner"),
+            "human_count": sum(bool(p.get("owner_id")) for p in state["players"]),
+            "purged_at": time.time(),
+        }
+        with self.db:
+            self.db.execute("INSERT OR REPLACE INTO room_statistics VALUES(?,?)", (room_id, json.dumps(stats)))
+            for table in ("room_events", "player_memory", "model_telemetry", "completed_games", "rooms"):
+                self.db.execute(f"DELETE FROM {table} WHERE room_id=?", (room_id,))
 
     @synchronized
     def model_report(self, room_id: str, game_id: str) -> dict[str, Any]:
@@ -296,6 +393,35 @@ class Store:
                 (room_id,),
             )
         ]
+
+    @synchronized
+    def user_history(self, owner_id: str) -> list[dict[str, Any]]:
+        result = []
+        for room_id, game_id, finished, encoded in self.db.execute(
+            "SELECT room_id,game_id,finished_at,state FROM completed_games WHERE EXISTS (SELECT 1 FROM json_each(json_extract(state,'$.players')) WHERE json_extract(value,'$.owner_id')=?) ORDER BY finished_at DESC LIMIT 100",
+            (owner_id,),
+        ):
+            state = json.loads(encoded)
+            you = next(p for p in state["players"] if p.get("owner_id") == owner_id)
+            from .roles import ROLE_DEFINITIONS
+
+            result.append(
+                {
+                    "room_id": room_id,
+                    "game_id": game_id,
+                    "finished_at": finished,
+                    "mode": state["mode"],
+                    "player_count": state["player_count"],
+                    "role": you["role"],
+                    "winner": state.get("winner"),
+                    "won": state.get("winner") == ROLE_DEFINITIONS[you["role"]].faction,
+                    "models": sorted({p.get("model", "mock") for p in state["players"] if not p.get("owner_id")}),
+                    "companions": [
+                        p["name"] for p in state["players"] if p.get("owner_id") and p.get("owner_id") != owner_id
+                    ],
+                }
+            )
+        return result
 
     @synchronized
     def public_replay(self, room_id: str, game_id: str) -> list[dict[str, Any]]:

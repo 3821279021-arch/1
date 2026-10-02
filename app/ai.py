@@ -432,8 +432,13 @@ class AIOrchestrator:
         style: dict[str, Any] | None = None,
     ):
         system, user, ctx = await asyncio.to_thread(self.context, view, personality, memory, style)
-        limit = ctx["style"]["length"]
-        system += f" 当前任务是公开发言。只输出发言正文，最多{limit}个字符，不输出 JSON 或隐藏思维过程。你的身份声称和策略由你自己决定。"
+        limit = 500  # Transport safety limit; personality length is a preference.
+        system += (
+            " 当前任务是公开发言。只输出发言正文，不输出 JSON 或隐藏思维过程。"
+            "通常80到180个中文字；复杂局面可到250到300字。第一轮信息少可自然更短，"
+            "不要机械凑字、重复模板或编造系统事实。表达长度偏好不是硬截断。"
+            "你的身份声称和策略由你自己决定。"
+        )
         if view.get("phase") == "last_words":
             system += " 当前为出局遗言；发言不能自动提交投票、技能或夜间动作。"
         ctx["action"] = "speech"

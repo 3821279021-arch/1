@@ -382,7 +382,7 @@ class LLMRouter:
             "model_prompt",
             {"provider": entry.provider, "model": entry.model, "system": system, "user": user, "parameters": options},
         )
-        output_limit = options.get("max_output_tokens", 350 if stream else 600)
+        output_limit = options.get("max_output_tokens", 700 if stream else 600)
         if entry.provider == "anthropic" and options.get("enable_thinking") is not False:
             budget = options.get(
                 "thinking_budget",
@@ -491,7 +491,17 @@ class LLMRouter:
 
     @staticmethod
     def _reason(exc: BaseException) -> str:
-        return f"HTTP {exc.response.status_code}" if isinstance(exc, httpx.HTTPStatusError) else type(exc).__name__
+        if isinstance(exc, httpx.HTTPStatusError):
+            try:
+                body = exc.response.json()
+                error = body.get("error", body)
+                code = str(error.get("code", error.get("type", ""))).lower()
+                if code in {"insufficient_quota", "quota_exceeded", "resource_exhausted", "arrearage"}:
+                    return "quota_exhausted"
+            except (ValueError, AttributeError, TypeError):
+                pass
+            return f"HTTP {exc.response.status_code}"
+        return type(exc).__name__
 
     def note_failure(self, provider: str, exc: Exception) -> None:
         self.activity[provider]["failures"] += 1
@@ -514,6 +524,9 @@ class LLMRouter:
             "seer_inspect",
             "witch",
             "guard_protect",
+            "dream_visit",
+            "grave_inspect",
+            "crow_mark",
             "hunter_shoot",
             "knight_duel",
             "duel",
@@ -528,6 +541,9 @@ class LLMRouter:
             "seer_inspect": ("seer_inspect", "inspect"),
             "witch": ("witch",),
             "guard_protect": ("guard_protect", "guard", "protect"),
+            "dream_visit": ("dream_visit",),
+            "grave_inspect": ("grave_inspect",),
+            "crow_mark": ("crow_mark",),
             "hunter_shoot": ("hunter_shoot", "shoot"),
             "knight_duel": ("knight_duel", "duel"),
             "duel": ("duel", "knight_duel"),
@@ -869,6 +885,9 @@ class LLMRouter:
             "poison",
             "vote",
             "guard_protect",
+            "dream_visit",
+            "grave_inspect",
+            "crow_mark",
             "hunter_shoot",
             "knight_duel",
             "duel",
@@ -993,6 +1012,8 @@ class LLMRouter:
                                     continue
                                 if not isinstance(chunk, str):
                                     raise ValueError("Invalid public text delta")
+                                if not emitted:
+                                    usage["first_token_ms"] = round((time.monotonic() - before) * 1000)
                                 emitted = True
                                 public_parts.append(chunk)
                                 self._publish_execution(
@@ -1043,6 +1064,8 @@ class LLMRouter:
                         self.registry.failed(entry.key, reason, disclose=self._disclose_health(ctx))
                         break
                 finally:
+                    usage["output_characters"] = sum(map(len, public_parts))
+                    usage["generation_ms"] = round((time.monotonic() - before) * 1000)
                     await self._after_call(
                         guard, ticket, meta, started=before, success=success, reason=attempt_reason, usage=usage
                     )

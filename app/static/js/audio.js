@@ -1,7 +1,8 @@
 import {store, runtime} from './store.js';
+import {initMixer, mixPreferences, observeMixer, stopMixer, unlockMixer} from './mixer.js';
 
 // Short local WAV cues work without a speech engine or an external service.
-const cueKinds = new Set(['turn', 'start', 'end', 'vote', 'night', 'day', 'gameover', 'test']);
+const cueKinds = new Set(['turn', 'start', 'end', 'vote', 'night', 'day', 'gameover', 'test', 'death', 'skill']);
 const maxSpeechQueue = 80;
 let cuePlayer, cuePlaying = false, cueGeneration = 0, cueWatchdog;
 const cueQueue = [], cueSeen = new Map();
@@ -15,16 +16,19 @@ store.audioBacklogSkipped = false;
 
 const node = id => runtime.$(id);
 function updateAudioStatus() {
+ const home=node('homeSound');if(home){home.textContent=store.audioEnabled?'🔊 关闭游戏声音':store.audioError?'🔊 重试游戏声音':'🔊 开启游戏声音';home.setAttribute('aria-pressed',String(store.audioEnabled));node('homeAudioStatus').textContent=store.audioError||'';}
  const status = node('audioStatus');
  const reading = store.audioSpeaking ? `正在朗读${store.audioReadingPid || ''}号` : store.audioQueue.length ? '朗读准备中' : '';
  if (status) status.textContent = [store.audioEnabled ? '提示音已开启' : '提示音已关闭', store.ttsEnabled ? `AI 朗读已开启 · ${store.ttsRate.toFixed(1)} 倍速` : 'AI 朗读已关闭', reading, store.ttsEnabled ? `待播${store.audioQueue.length}句` : '', store.audioBacklogSkipped ? '积压已跳过早期朗读' : '', store.audioError, store.ttsError].filter(Boolean).join(' · ');
  const stop = node('audioStop');
  if (stop) stop.disabled = false;
+ if (cuePlayer) cuePlayer.volume = mixPreferences.sfx;
 }
 function audioFailure(error) {
  const name = error?.name || '';
  store.audioError = name === 'NotAllowedError' ? '提示音被浏览器阻止（autoplay / not-allowed），请再次点击启用声音' : name === 'NotSupportedError' ? '提示音格式不受此浏览器支持' : `提示音播放失败${name ? `（${name}）` : '，请检查设备声音并重试'}`;
  store.audioEnabled = false;
+ stopMixer();
  const toggle = node('audioToggle');
  if (toggle) { toggle.textContent = '重试提示音'; toggle.setAttribute('aria-pressed', 'false'); }
  updateAudioStatus();
@@ -85,7 +89,7 @@ function clearAudio(stopPrompts = true) {
  clearTimeout(voicesTimer);
  clearTimeout(speechWatchdog);
  try { store.synth?.cancel(); } catch (_) {}
- if (stopPrompts) stopCues();
+ if (stopPrompts) { stopCues(); stopMixer(); }
  updateAudioStatus();
 }
 function enqueueSpeech(text, pid) {
@@ -170,7 +174,9 @@ function speakPet(text) {
  pumpAudio();
 }
 function observeAudioState(s, prev) {
- if (!s) return;
+ if (!s) {runtime.startLobbyMusic?.();return;}
+ observeMixer(s);
+ if(s.lifecycle==='SUSPENDED'){observed=null;return;}
  // Keep a compact copy: packet handlers mutate the previous snapshot in place.
  const prior = observed?.game === s.game_id ? observed : prev?.game_id === s.game_id ? audioObservation(prev) : null;
  const next = audioObservation(s);
@@ -206,6 +212,7 @@ function testSpeech() {
  pumpAudio();
 }
 function initAudio() {
+ initMixer();
  try {
   cuePlayer = new Audio('/static/assets/audio/test.wav');
   cuePlayer.preload = 'auto';
@@ -216,14 +223,15 @@ function initAudio() {
  const toggle = node('audioToggle');
  if (toggle) toggle.onclick = () => {
   store.audioEnabled = !store.audioEnabled;
-  toggle.textContent = store.audioEnabled ? '关闭提示音' : '启用声音';
+  toggle.textContent = store.audioEnabled ? '关闭游戏声音' : '🔊 开启游戏声音';
   toggle.setAttribute('aria-pressed', String(store.audioEnabled));
   if (store.audioEnabled) {
    store.audioError = '';
    // play() happens synchronously inside this click to unlock iOS / Safari.
    stopCues();
    playCue('test');
-  } else stopCues();
+   unlockMixer();
+  } else { stopCues(); stopMixer(); }
   updateAudioStatus();
  };
  const stop = node('audioStop');
@@ -260,4 +268,4 @@ function initAudio() {
  updateAudioStatus();
 }
 
-Object.assign(runtime, {clearAudio, prepareSpeech, finishSpeechBuffer, utteranceFor, pumpAudio, queueSpeechDelta, flushAudio, speakPet, playCue, observeAudioState, initAudio});
+Object.assign(runtime, {clearAudio, prepareSpeech, finishSpeechBuffer, utteranceFor, pumpAudio, queueSpeechDelta, flushAudio, speakPet, playCue, observeAudioState, initAudio, audioFailure, updateAudioStatus});

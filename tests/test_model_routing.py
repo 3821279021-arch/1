@@ -201,7 +201,7 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(state["pending"], {})
             usage = limits.snapshot("room", "game")["game"]
             self.assertEqual(usage["requests"], 1)
-            self.assertEqual(usage["tokens"], 360)
+            self.assertEqual(usage["tokens"], 710)
             self.assertEqual(router.outcome_records[-1]["agent_id"], "A")
             self.assertEqual(router.outcome_records[-1]["failure_reason"], "stream_closed")
 

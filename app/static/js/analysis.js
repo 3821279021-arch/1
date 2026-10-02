@@ -29,14 +29,15 @@ async function loadAnalysis(gameId) {
  runtime.$('analysisContent').textContent = '正在读取本局数据…';
  runtime.stopReplay(); store.replayEvents = []; runtime.renderReplay();
  try {
-  const result = await runtime.roomAPI.analysis(store.roomId, gameId), players = result.players || [];
-  runtime.$('analysisContent').innerHTML = `<p class="winner">${({wolves:'狼人阵营获胜',good:'好人阵营获胜',draw:'本局平局'})[result.winner] || '本局结果'}</p><p class="muted">身份已公开。用量和延迟来自本局记录；未报价成本显示为 —，价格单位以部署者配置为准。Mock 不代表真实模型能力。</p><div class="analysis-grid">${players.map(p => `<article class="analysis-seat"><strong>${runtime.esc(p.id)} 号 · ${runtime.esc(p.name)} ${p.won ? '✧ 获胜' : ''}</strong><p class="role-line">${runtime.esc(p.role_name || runtime.roleNames[p.role] || p.role || '')} · ${runtime.esc(({wolves:'狼队',good:'好人'})[p.faction] || p.faction || '')}</p><p>${runtime.esc(p.model || p.model_id || '真人')}</p><div class="stat-line"><span>发言 <b>${number(p.speeches)}</b></span><span>投票 <b>${number(p.votes)}</b></span><span>技能 <b>${number(p.skills)}</b></span><span>投中狼人 <b>${number(p.vote_hits)}</b></span></div><div class="stat-line"><span>延迟 <b>${number(p.latency_ms)} ms</b></span><span>输入 / 输出 <b>${number(p.input_tokens)} / ${number(p.output_tokens)}</b></span></div><div class="stat-line"><span>估算成本 <b>${number(p.estimated_cost, 6)}</b></span><span>错误 <b>${number(p.errors)}</b></span><span>兜底 <b>${number(p.fallbacks)}</b></span><span>判断变化 <b>${number(p.judgment_change_count)} 次（公开声明）</b></span></div></article>`).join('')}</div>`;
+  const result = store.analysisHistoryRoom ? await runtime.api(`/api/history/${store.analysisHistoryRoom}/${gameId}`) : await runtime.roomAPI.analysis(store.roomId, gameId), players = result.players || [];
+  runtime.$('analysisContent').innerHTML = `<p class="winner">${({wolves:'狼人阵营获胜',good:'好人阵营获胜',draw:'本局平局'})[result.winner] || '本局结果'}</p><p class="muted">身份已公开。用量和延迟来自本局记录；未报价成本显示为 —，价格单位以部署者配置为准。Mock 不代表真实模型能力。</p><div class="analysis-grid">${players.map(p => `<article class="analysis-seat"><strong>${runtime.esc(p.id)} 号 · ${runtime.esc(p.name)} ${p.won ? '✧ 获胜' : ''}</strong><p class="role-line">${runtime.esc(p.role_name || runtime.roleNames[p.role] || p.role || '')} · ${runtime.esc(({wolves:'狼队',good:'好人'})[p.faction] || p.faction || '')}</p><p>${runtime.esc(p.model || p.model_id || '真人')}</p><div class="stat-line"><span>发言 <b>${number(p.speeches)}</b></span><span>投票 <b>${number(p.votes)}</b></span><span>技能 <b>${number(p.skills)}</b></span><span>投中狼人 <b>${number(p.vote_hits)}</b></span></div><div class="stat-line"><span>延迟 <b>${number(p.latency_ms)} ms</b></span><span>首 token <b>${number(p.first_token_ms)} ms</b></span><span>真实生成 <b>${number(p.generation_ms)} ms</b></span><span>字数 <b>${number(p.output_characters)}</b></span><span>输入 / 输出 <b>${number(p.input_tokens)} / ${number(p.output_tokens)}</b></span></div><div class="stat-line"><span>估算成本 <b>${number(p.estimated_cost, 6)}</b></span><span>错误 <b>${number(p.errors)}</b></span><span>兜底 <b>${number(p.fallbacks)}</b></span><span>判断变化 <b>${number(p.judgment_change_count)} 次（公开声明）</b></span></div></article>`).join('')}</div>`;
   store.replayEvents = result.events || [];
   runtime.$('replaySlider').max = Math.max(0, store.replayEvents.length - 1);
   runtime.$('replaySlider').value = 0; runtime.renderReplay();
  } catch (error) { runtime.$('analysisContent').textContent = error.message; }
 }
 async function openAnalysis() {
+ store.analysisHistoryRoom = null;
  runtime.openDrawer('analysisDrawer'); runtime.stopReplay();
  try {
   const response = await runtime.roomAPI.games(store.roomId), games = response.games || [], select = runtime.$('analysisGame');
@@ -45,6 +46,12 @@ async function openAnalysis() {
   if (games.some(g => g.game_id === store.state?.game_id)) select.value = store.state.game_id;
   await loadAnalysis(select.value);
  } catch (error) { runtime.$('analysisContent').textContent = error.message; }
+}
+async function openHistoricalAnalysis(game) {
+ store.analysisHistoryRoom = game.room_id;
+ runtime.openDrawer('analysisDrawer');
+ runtime.$('analysisGame').innerHTML = store.historyGames.filter(g=>g.room_id===game.room_id).map(g=>`<option value="${runtime.esc(g.game_id)}">${runtime.esc(new Date(g.finished_at*1000).toLocaleString())} · ${runtime.esc(g.game_id.slice(0,8))}</option>`).join('');
+ runtime.$('analysisGame').value = game.game_id; await loadAnalysis(game.game_id);
 }
 function initAnalysis() {
  runtime.$('analysisOpen').onclick = runtime.openAnalysis;
@@ -60,4 +67,4 @@ function initAnalysis() {
  };
  runtime.$('analysisDrawer').addEventListener('close', runtime.stopReplay);
 }
-Object.assign(runtime, {openAnalysis, loadAnalysis, renderReplay, stopReplay, replayText, initAnalysis});
+Object.assign(runtime, {openAnalysis, openHistoricalAnalysis, loadAnalysis, renderReplay, stopReplay, replayText, initAnalysis});

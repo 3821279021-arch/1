@@ -1,4 +1,4 @@
-name: V3.1 regression
+name: V3.2 regression
 on: [push, pull_request]
 jobs:
   verify:
@@ -23,6 +23,7 @@ jobs:
             node --input-type=module --check < "$file"
           done
           node --check app/static/sw.js
+          node --test tests/speech_buffer.mjs
       - name: Unit tests with coverage
         run: |
           coverage run -m unittest discover -s tests -p 'test_*.py' -v
@@ -49,6 +50,7 @@ jobs:
           python tests/wait_for_server.py
           python tests/browser_v3.py
           python tests/browser_v31.py
+          python tests/browser_v32.py
       - name: Docker build and import smoke
         run: |
           docker build -t ai-werewolf-ci .

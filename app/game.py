@@ -23,7 +23,7 @@ PERSONALITIES = {
         "caution": 0.7,
         "logic": 0.9,
         "deception": 0.3,
-        "length": 100,
+        "length": 160,
         "social": "理性",
     },
     "hunter": {
@@ -33,7 +33,7 @@ PERSONALITIES = {
         "caution": 0.3,
         "logic": 0.6,
         "deception": 0.3,
-        "length": 80,
+        "length": 140,
         "social": "直接",
     },
     "trickster": {
@@ -43,7 +43,7 @@ PERSONALITIES = {
         "caution": 0.5,
         "logic": 0.6,
         "deception": 0.9,
-        "length": 100,
+        "length": 160,
         "social": "试探",
     },
     "cautious": {
@@ -53,7 +53,7 @@ PERSONALITIES = {
         "caution": 0.95,
         "logic": 0.8,
         "deception": 0.2,
-        "length": 90,
+        "length": 150,
         "social": "温和",
     },
     "performer": {
@@ -63,7 +63,7 @@ PERSONALITIES = {
         "caution": 0.4,
         "logic": 0.5,
         "deception": 0.6,
-        "length": 120,
+        "length": 180,
         "social": "活泼",
     },
     "commander": {
@@ -73,7 +73,7 @@ PERSONALITIES = {
         "caution": 0.6,
         "logic": 0.8,
         "deception": 0.4,
-        "length": 120,
+        "length": 180,
         "social": "组织",
     },
 }
@@ -119,8 +119,10 @@ PHASE_NAMES = {
     "finished": "游戏结束",
 }
 PHASE_NAMES.update(night_guard="守卫守护", night_beauty="狼美人魅惑", death_skill="死亡技能")
+PHASE_NAMES.update(night="夜间行动", night_dreamer="摄梦人行动", night_grave="守墓人行动", night_crow="乌鸦行动")
 for timing in TIMINGS.values():
     timing.update(night_guard=timing["night_seer"], night_beauty=timing["night_seer"], death_skill=timing["last_words"])
+    timing.update(night_dreamer=timing["night_seer"], night_grave=timing["night_seer"], night_crow=timing["night_seer"])
 
 
 @dataclass
@@ -224,6 +226,9 @@ class WerewolfGame:
     unique_model_per_ai_seat: bool = True
     processed_actions: dict[str, dict[str, Any]] = field(default_factory=dict)
     lifecycle: str = "LOBBY"
+    suspended_at: float | None = None
+    suspended_remaining: float | None = None
+    retention_expires_at: float | None = None
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
     finished_at: float | None = None
@@ -235,6 +240,8 @@ class WerewolfGame:
     mode: str = "quick6"
     player_count: int = 6
     role_roster: list[str] = field(default_factory=list)
+    board_policy: str = "fixed"
+    random_role_pool: list[str] = field(default_factory=list)
     night_guards: dict[str, int | None] = field(default_factory=dict)
     night_saved: list[int] = field(default_factory=list)
     night_poisons: list[int] = field(default_factory=list)
@@ -262,6 +269,12 @@ class WerewolfGame:
         # Modes are validated on construction and when lobby configuration changes.
         count = self.player_count if self.mode == "custom" else None
         self.mode, self.player_count, self.role_roster = validate_mode(self.mode, count, self.role_roster or None)
+        from .boards import BOARD_POLICIES, candidates
+
+        if self.board_policy not in BOARD_POLICIES:
+            raise ValueError("未知板子策略")
+        if self.board_policy != "fixed":
+            candidates(self.player_count, self.random_role_pool)
 
     def wolf_actors(self) -> list[Player]:
         regular = [p for p in self.alive_players() if ROLE_DEFINITIONS[p.role].participates_in_kill]

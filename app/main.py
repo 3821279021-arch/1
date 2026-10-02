@@ -19,6 +19,7 @@ from .game import GAME_MODES, PERSONALITIES
 from .limits import RateLimitError
 from .llm import LLMRouter
 from .persistence import Store
+from .roles import ROLE_DEFINITIONS
 from .rooms import RoomManager
 from .runtime_lock import RuntimeLock
 from .trace import research_export
@@ -104,9 +105,22 @@ class RoomRequest(CommandRequest):
     seat: int | None = Field(default=None, ge=1, le=16)
     title: str = Field(default="月下狼人杀", min_length=1, max_length=40)
     pace: Literal["fast", "standard", "slow"] = "standard"
-    mode: Literal["quick6", "standard9", "standard12", "custom"] = "quick6"
+    mode: Literal[
+        "quick6",
+        "standard9",
+        "standard12",
+        "wolfking12",
+        "beautyknight12",
+        "hidden12",
+        "advanced9",
+        "fun6",
+        "special12",
+        "custom",
+    ] = "quick6"
     player_count: int | None = Field(default=None, ge=4, le=16)
     roles: list[str] | None = Field(default=None, min_length=4, max_length=16)
+    board_policy: Literal["fixed", "constrained_random", "custom_random"] | None = None
+    random_role_pool: list[str] | None = Field(default=None, max_length=20)
 
 
 class JoinRequest(CommandRequest):
@@ -119,9 +133,25 @@ class ConfigureRequest(CommandRequest):
     pace: Literal["fast", "standard", "slow"] = "standard"
     seats: list[dict[str, Any]] = Field(default_factory=list, max_length=16)
     unique_model_per_ai_seat: bool = Field(default=True, strict=True)
-    mode: Literal["quick6", "standard9", "standard12", "custom"] | None = None
+    mode: (
+        Literal[
+            "quick6",
+            "standard9",
+            "standard12",
+            "wolfking12",
+            "beautyknight12",
+            "hidden12",
+            "advanced9",
+            "fun6",
+            "special12",
+            "custom",
+        ]
+        | None
+    ) = None
     player_count: int | None = Field(default=None, ge=4, le=16)
     roles: list[str] | None = Field(default=None, min_length=4, max_length=16)
+    board_policy: Literal["fixed", "constrained_random", "custom_random"] | None = None
+    random_role_pool: list[str] | None = Field(default=None, max_length=20)
 
 
 class ActionRequest(CommandRequest):
@@ -135,6 +165,9 @@ class ActionRequest(CommandRequest):
         "witch",
         "wolf_discuss",
         "guard_protect",
+        "dream_visit",
+        "grave_inspect",
+        "crow_mark",
         "wolf_beauty_charm",
         "hunter_shoot",
         "wolf_king_shoot",
@@ -224,6 +257,8 @@ async def create_room(req: RoomRequest, identity: str = Depends(owner)):
             mode=req.mode,
             player_count=req.player_count,
             roles=req.roles,
+            board_policy=req.board_policy or "fixed",
+            random_role_pool=req.random_role_pool,
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
@@ -269,6 +304,21 @@ async def close_room(room_id: str, req: CommandRequest = CommandRequest(), ident
 @app.post("/api/rooms/{room_id}/leave")
 async def leave_room(room_id: str, req: CommandRequest = CommandRequest(), identity: str = Depends(owner)):
     return await command(room_id, identity, "leave", req.model_dump(exclude_none=True))
+
+
+@app.post("/api/rooms/{room_id}/pause")
+async def pause_room(room_id: str, req: CommandRequest = CommandRequest(), identity: str = Depends(owner)):
+    return await command(room_id, identity, "pause", req.model_dump(exclude_none=True))
+
+
+@app.post("/api/rooms/{room_id}/resume")
+async def resume_room(room_id: str, req: CommandRequest = CommandRequest(), identity: str = Depends(owner)):
+    return await command(room_id, identity, "resume", req.model_dump(exclude_none=True))
+
+
+@app.delete("/api/rooms/{room_id}")
+async def delete_room(room_id: str, identity: str = Depends(owner)):
+    return await command(room_id, identity, "delete", {})
 
 
 @app.post("/api/rooms/{room_id}/configure")
@@ -332,12 +382,26 @@ async def health():
         "storage": "sqlite",
         "personalities": PERSONALITIES,
         "game_modes": GAME_MODES,
+        "role_catalog": [role.public() for role in ROLE_DEFINITIONS.values()],
     }
 
 
 @app.get("/api/models")
 async def platform_models(identity: str = Depends(owner)):
     return {"models": manager().router.model_status()}
+
+
+@app.get("/api/models/preferences")
+async def model_preferences(identity: str = Depends(owner)):
+    return await manager().store.call("model_preferences", identity)
+
+
+@app.put("/api/models/preferences")
+async def save_model_preferences(req: dict[str, Any], identity: str = Depends(owner)):
+    try:
+        return await manager().store.call("save_model_preferences", identity, req)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 @app.post("/api/models/refresh")
@@ -465,6 +529,21 @@ async def analysis(room_id: str, game_id: str | None = None, identity: str = Dep
         raise HTTPException(400, str(exc)) from exc
 
 
+@app.get("/api/history")
+async def user_history(identity: str = Depends(owner)):
+    return {"games": await manager().store.call("user_history", identity)}
+
+
+@app.get("/api/history/{room_id}/{game_id}")
+async def historical_analysis(room_id: str, game_id: str, identity: str = Depends(owner)):
+    try:
+        return await manager().analysis(room_id, identity, game_id, historical_only=True)
+    except PermissionError as exc:
+        raise HTTPException(403, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
 @app.get("/api/rooms/{room_id}/replay")
 async def replay(room_id: str, game_id: str | None = None, identity: str = Depends(owner)):
     report = await analysis(room_id, game_id, identity)
@@ -573,9 +652,8 @@ async def websocket(websocket: WebSocket, room_id: str):
         with CancelScope(shield=True):
             await asyncio.gather(*pending, return_exceptions=True)
         if connection:
-            room = manager().rooms.get(room_id)
-            if room:
-                room.connections.discard(connection)
+            with CancelScope(shield=True):
+                await manager().unsubscribe(room_id, connection)
 
 
 class RecoveryRequest(BaseModel):

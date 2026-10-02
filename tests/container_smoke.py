@@ -35,7 +35,7 @@ with tempfile.TemporaryDirectory() as folder:
                 time.sleep(0.1)
             else:
                 raise RuntimeError("Container ASGI startup failed")
-            assert health.json()["version"] == "3.1.0"
+            assert health.json()["version"] == "3.2.0"
             session = client.post("/api/session").json()
             headers = {"Authorization": "Bearer " + session["token"]}
             room = client.post("/api/rooms", headers=headers, json={}).json()
@@ -46,7 +46,7 @@ with tempfile.TemporaryDirectory() as folder:
             print(
                 json.dumps(
                     {
-                        "version": "3.1.0",
+                        "version": "3.2.0",
                         "asgi_health": True,
                         "sqlite_room_creation": True,
                         "session_recovery_and_revocation": True,

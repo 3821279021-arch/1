@@ -1,8 +1,10 @@
-# AI Werewolf · Reproducible Arena V3.1
+# AI Werewolf · Play Experience V3.2.0
 
 [中文](README.md) · [License decision pending](LICENSE-DECISION.md) · [Benchmark](docs/benchmark.md)
 
 Multiplayer social deduction with humans and AI, now with reproducible environments and offline research batches. Supports 6/9/12 players and 4–16-player custom rosters, BYOK, dynamic provider/model catalogs, WebSockets, public replay, PWA and local audio/TTS.
+
+V3.2 adds suspended unattended rooms, local music/host announcements, paced speech display, owner-scoped model favorites and lineups, five-tab navigation, 16 complete roles and constrained random casual boards. Tournament & Evaluation moves to V3.3. See [V3.2 guide](docs/V3.2-PLAY-GUIDE.md) and [acceptance](docs/V3.2-ACCEPTANCE.md).
 
 ![V3 game](docs/previews/v3/v3-12-desktop-stage.png)
 

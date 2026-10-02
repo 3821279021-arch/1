@@ -37,6 +37,9 @@ class Room:
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     connections: set[Connection] = field(default_factory=set)
     jobs: dict[tuple[int, int], asyncio.Task] = field(default_factory=dict)
+    pet_tasks: set[asyncio.Task] = field(default_factory=set)
+    job_started: dict[tuple[int, int], float] = field(default_factory=dict)
+    offline_since: float | None = field(default_factory=time.time)
     pet_locks: dict[str, asyncio.Lock] = field(default_factory=dict)
     last_sync: float = 0
     last_access: float = field(default_factory=time.time)
@@ -56,6 +59,8 @@ class RoomManager:
         self.unload_seconds = float(os.getenv("ROOM_IDLE_UNLOAD_SECONDS", "300"))
         self.lobby_ttl = float(os.getenv("ROOM_LOBBY_TTL_HOURS", "6")) * 3600
         self.finished_ttl = float(os.getenv("ROOM_FINISHED_TTL_DAYS", "14")) * 86400
+        self.suspended_ttl = float(os.getenv("ROOM_SUSPENDED_TTL_HOURS", "48")) * 3600
+        self.reconnect_grace = max(0, float(os.getenv("ROOM_RECONNECT_GRACE_SECONDS", "45")))
 
     def _room(self, game: WerewolfGame) -> Room:
         from .memory import build_memory_from_view, compact_memory
@@ -112,6 +117,9 @@ class RoomManager:
             player["thinking"] = public_phase and any(
                 key[1] == actor.id and not job.done() for key, job in room.jobs.items()
             )
+            player["thinking_started_at"] = (
+                room.job_started.get((room.game.turn_sequence, actor.id)) if player["thinking"] else None
+            )
         keys: dict[str, list[int]] = {}
         for p in room.game.players:
             if not p.owner_id and not p.model_key.startswith("mock:"):
@@ -154,7 +162,7 @@ class RoomManager:
                             "seq",
                         )
                     }
-                    self.push(connection, packet)
+                    self.push(connection, InformationScope.client_event(room.game, packet))
             if snapshot:
                 self.push(connection, {"type": "state_snapshot", "data": self.snapshot(room, connection.owner_id)})
 
@@ -180,6 +188,37 @@ class RoomManager:
                 if connection.owner_id == owner_id:
                     self.push(connection, {"type": "session_revoked", "data": {}})
                     room.connections.discard(connection)
+                    if not room.connections:
+                        room.offline_since = time.time()
+
+    async def unsubscribe(self, room_id: str, connection: Connection) -> None:
+        room = self.rooms.get(room_id)
+        if room:
+            async with room.lock:
+                room.connections.discard(connection)
+                if not room.connections and room.offline_since is None:
+                    room.offline_since = time.time()
+
+    def cancel_jobs(self, room: Room) -> None:
+        current = asyncio.current_task()
+        for task in (*room.jobs.values(), *room.pet_tasks):
+            if task is not current:
+                task.cancel()
+        room.jobs.clear()
+        room.job_started.clear()
+
+    def check_presence(self, room: Room, now: float | None = None, *, immediate: bool = False) -> bool:
+        now = time.time() if now is None else now
+        if room.connections:
+            room.offline_since = None
+            return False
+        if room.offline_since is None:
+            room.offline_since = now
+        if immediate or now - room.offline_since >= self.reconnect_grace:
+            if room.engine.suspend(now):
+                self.cancel_jobs(room)
+                return True
+        return False
 
     def invalidate_credential(self, owner_id: str, credential_id: str) -> None:
         """Abort jobs whose credential was deleted or replaced, then reschedule safely."""
@@ -194,22 +233,30 @@ class RoomManager:
                             task.cancel()
                             room.jobs.pop(key, None)
 
-    async def analysis(self, room_id: str, owner_id: str, game_id: str | None = None) -> dict[str, Any]:
-        room = await self.require_async(room_id, owner_id)
-        async with room.lock:
-            requested = game_id or room.game.game_id
-            if requested == room.game.game_id:
-                if not room.game.game_over:
-                    raise PermissionError("对局结束后才能查看身份、竞技统计与回放")
-                game = deepcopy(room.game)
-            else:
-                game = await self.store.call("completed_game", room_id, requested)
-                if game is None:
-                    raise ValueError("已完成的对局不存在")
-            # Current room membership does not grant access to a game played
-            # before this user joined the room.
+    async def analysis(
+        self, room_id: str, owner_id: str, game_id: str | None = None, *, historical_only: bool = False
+    ) -> dict[str, Any]:
+        if historical_only:
+            requested = game_id
+            game = await self.store.call("completed_game", room_id, requested)
+            if game is None:
+                raise ValueError("已完成的对局不存在")
             if not game.owned_player(owner_id):
                 raise PermissionError("你未参与此对局")
+        else:
+            room = await self.require_async(room_id, owner_id)
+            async with room.lock:
+                requested = game_id or room.game.game_id
+                if requested == room.game.game_id:
+                    if not room.game.game_over:
+                        raise PermissionError("对局结束后才能查看身份、竞技统计与回放")
+                    game = deepcopy(room.game)
+                else:
+                    game = await self.store.call("completed_game", room_id, requested)
+                    if game is None:
+                        raise ValueError("已完成的对局不存在")
+                if not game.owned_player(owner_id):
+                    raise PermissionError("你未参与此对局")
         if self.router._background_writes:
             await asyncio.gather(*self.router._background_writes, return_exceptions=True)
         telemetry = await self.store.call("model_report", room_id, requested)
@@ -276,6 +323,14 @@ class RoomManager:
                         record.get("status") == "fallback" or bool(record.get("failure_reason")) for record in outcomes
                     ),
                     "calls": len(calls),
+                    "first_token_ms": round(
+                        sum(r["first_token_ms"] for r in calls if "first_token_ms" in r)
+                        / sum("first_token_ms" in r for r in calls)
+                    )
+                    if any("first_token_ms" in r for r in calls)
+                    else None,
+                    "generation_ms": sum(r.get("generation_ms", 0) for r in calls),
+                    "output_characters": sum(r.get("output_characters", 0) for r in calls),
                     "actual_models": sorted(
                         {record.get("model_key") for record in outcomes if record.get("model_key")}
                     ),
@@ -305,6 +360,8 @@ class RoomManager:
         mode: str = "quick6",
         player_count: int | None = None,
         roles: list[str] | None = None,
+        board_policy: str = "fixed",
+        random_role_pool: list[str] | None = None,
     ) -> dict[str, Any]:
         existing = await self.store.call("created", owner_id, action_id) if action_id else None
         if existing:
@@ -312,7 +369,16 @@ class RoomManager:
         await asyncio.to_thread(self.limits.check, "room", owner_id)
         game = WerewolfGame(secrets.token_hex(5), owner_id, title=title, pace=pace, creation_action_id=action_id)
         room = self._room(game)
-        room.engine.configure(owner_id, pace, [], mode=mode, player_count=player_count, roles=roles)
+        room.engine.configure(
+            owner_id,
+            pace,
+            [],
+            mode=mode,
+            player_count=player_count,
+            roles=roles,
+            board_policy=board_policy,
+            random_role_pool=random_role_pool,
+        )
         room.engine.join(owner_id, name, seat)
         log.info("room_created room_id=%s request_id=%s", game.room_id, action_id)
         self.rooms[game.room_id] = room
@@ -359,6 +425,8 @@ class RoomManager:
             await self.rate("chat" if command == "wolf_chat" else "action", room_id, owner_id)
             if room.game.lifecycle in {"ARCHIVED", "DELETED"}:
                 raise ValueError("房间已关闭，只能查看历史")
+            if room.game.lifecycle == "SUSPENDED" and command not in {"resume", "leave", "close", "delete"}:
+                raise ValueError("对局已暂停，请先继续对局")
             if room.engine.tick():
                 await self.commit_async(room)
             if command != "action":
@@ -427,6 +495,8 @@ class RoomManager:
                     mode=payload.get("mode"),
                     player_count=payload.get("player_count"),
                     roles=payload.get("roles"),
+                    board_policy=payload.get("board_policy"),
+                    random_role_pool=payload.get("random_role_pool"),
                 )
             elif command == "seat":
                 room.engine.change_seat(owner_id, payload.get("seat"))
@@ -442,7 +512,15 @@ class RoomManager:
                             task.cancel()
                             room.jobs.pop(key, None)
             elif command == "leave":
-                room.engine.leave(owner_id)
+                if room.game.lifecycle in {"ACTIVE", "SUSPENDED", "FINISHED"}:
+                    for connection in tuple(room.connections):
+                        if connection.owner_id == owner_id:
+                            self.push(connection, {"type": "room_left", "data": {"room_id": room_id}})
+                            self.push(connection, {"type": "reconnect", "data": {}})
+                            room.connections.discard(connection)
+                    self.check_presence(room, immediate=True)
+                else:
+                    room.engine.leave(owner_id)
                 if cache_key:
                     room.game.processed_actions[cache_key] = {
                         "action_id": action_id,
@@ -453,18 +531,36 @@ class RoomManager:
                         room.game.processed_actions.pop(next(iter(room.game.processed_actions)))
                 await self.commit_async(room)
                 return {"left": True, "room_id": room_id}
+            elif command == "pause":
+                if room.game.host_id != owner_id:
+                    raise PermissionError("只有房主可以暂停对局")
+                if not room.engine.suspend():
+                    raise ValueError("只有进行中的对局可以暂停")
+                self.cancel_jobs(room)
+            elif command == "resume":
+                room.engine.resume(owner_id)
+                room.offline_since = None if room.connections else time.time()
+            elif command == "delete":
+                if room.game.host_id != owner_id:
+                    raise PermissionError("只有房主可以关闭并删除房间")
+                self.cancel_jobs(room)
+                await self.store.call("delete_room", room_id)
+                room.game.lifecycle = "DELETED"
+                for connection in tuple(room.connections):
+                    self.push(connection, {"type": "room_left", "data": {"room_id": room_id}})
+                    self.push(connection, {"type": "reconnect", "data": {}})
+                self.rooms.pop(room_id, None)
+                if self.router.credentials:
+                    self.router.credentials.clear_scope(room_id)
+                return {"deleted": True, "room_id": room_id}
             elif command == "close":
                 room.engine.close_room(owner_id)
-                for task in room.jobs.values():
-                    task.cancel()
-                room.jobs.clear()
+                self.cancel_jobs(room)
                 if getattr(self.router, "credentials", None):
                     self.router.credentials.clear_scope(room_id)
             elif command == "rematch":
                 room.engine.rematch(owner_id)
-                for task in room.jobs.values():
-                    task.cancel()
-                room.jobs.clear()
+                self.cancel_jobs(room)
             else:
                 raise ValueError("未知命令")
             stored = {"action_id": action_id, "game_id": room.game.game_id, "state_revision": room.game.state_revision}
@@ -476,6 +572,19 @@ class RoomManager:
             return self.acknowledgement(room, owner_id, stored, False) if cache_key else self.snapshot(room, owner_id)
 
     async def pet_chat(
+        self, room_id: str, owner_id: str, text: str, client_message_id: str | None = None
+    ) -> dict[str, Any]:
+        room = await self.require_async(room_id, owner_id)
+        if room.game.lifecycle == "SUSPENDED":
+            raise ValueError("对局已暂停，请先继续对局")
+        task = asyncio.current_task()
+        room.pet_tasks.add(task)
+        try:
+            return await self._pet_chat(room_id, owner_id, text, client_message_id)
+        finally:
+            room.pet_tasks.discard(task)
+
+    async def _pet_chat(
         self, room_id: str, owner_id: str, text: str, client_message_id: str | None = None
     ) -> dict[str, Any]:
         room = await self.require_async(room_id, owner_id)
@@ -518,7 +627,7 @@ class RoomManager:
                 reply = "搭档暂时无法连接模型。建议先核对公开发言与票型，避免把猜测当成事实。"
                 memory = memory_from(view)
             async with room.lock:
-                if room.game.game_id != view["game_id"] or room.game.lifecycle == "ARCHIVED":
+                if room.game.game_id != view["game_id"] or room.game.lifecycle in {"ARCHIVED", "DELETED", "SUSPENDED"}:
                     log.info("stale_ai_response room=%s agent=%s category=pet_chat", room_id, pet["agent_id"])
                     return self.snapshot(room, owner_id)
                 room.engine.pet_message(owner_id, "assistant", reply, client_message_id)
@@ -533,6 +642,7 @@ class RoomManager:
         async with room.lock:
             connection = Connection(owner_id)
             room.connections.add(connection)
+            room.offline_since = None
             self.push(
                 connection,
                 {
@@ -783,24 +893,31 @@ class RoomManager:
                 if not task.done():
                     task.cancel()
                 room.jobs.pop(key, None)
+                room.job_started.pop(key, None)
         if g.lifecycle != "ACTIVE" or g.phase in {"lobby", "finished"}:
             return
         if g.phase == "night_discussion":
             key = (g.turn_sequence, 0)
             if key not in room.jobs:
                 room.jobs[key] = asyncio.create_task(self.discussion_rounds(room, g.turn_sequence))
+                room.job_started[key] = time.time()
             return
         for p in g.players:
             if room.engine.action_for(p.id) and self.can_control(room, p.id):
                 key = (g.turn_sequence, p.id)
                 if key not in room.jobs:
                     room.jobs[key] = asyncio.create_task(self.actor(room, p.id, g.turn_sequence))
+                    room.job_started[key] = time.time()
 
     def maintenance(self, now: float | None = None) -> None:
         now = time.time() if now is None else now
         protected = {rid for rid, r in self.rooms.items() if r.connections or r.game.lifecycle == "ACTIVE"}
         archived = self.store.archive_expired(
-            now=now, lobby_seconds=self.lobby_ttl, finished_seconds=self.finished_ttl, exclude=protected
+            now=now,
+            lobby_seconds=self.lobby_ttl,
+            finished_seconds=self.finished_ttl,
+            suspended_seconds=self.suspended_ttl,
+            exclude=protected,
         )
         for rid in archived:
             if rid in self.rooms:
@@ -845,6 +962,7 @@ class RoomManager:
                 now=now,
                 lobby_seconds=self.lobby_ttl,
                 finished_seconds=self.finished_ttl,
+                suspended_seconds=self.suspended_ttl,
                 exclude=protected,
             )
             for rid in archived:
@@ -880,6 +998,9 @@ class RoomManager:
                     continue
                 try:
                     async with room.lock:
+                        if self.check_presence(room):
+                            await self.commit_async(room)
+                            continue
                         changed = room.engine.tick()
                         now = time.time()
                         if changed:
@@ -892,7 +1013,10 @@ class RoomManager:
                             )
                             await self.commit_async(room, save=False, snapshot=False)
                             room.last_sync = now
+                        old_jobs = set(room.jobs)
                         self.launch_jobs(room)
+                        if set(room.jobs) - old_jobs and room.connections:
+                            await self.commit_async(room, save=False)
                 except Exception as exc:
                     log.error("Room clock error room=%s error=%s", room.game.room_id, type(exc).__name__)
             if time.time() - self.last_maintenance >= 30:
@@ -902,7 +1026,7 @@ class RoomManager:
             await asyncio.sleep(min(0.2, max(0.005, self.time_scale * 0.2)))
 
     async def close(self) -> None:
-        tasks = [task for room in self.rooms.values() for task in room.jobs.values()]
+        tasks = [task for room in self.rooms.values() for task in (*room.jobs.values(), *room.pet_tasks)]
         if self.runner:
             tasks.append(self.runner)
         for task in tasks:

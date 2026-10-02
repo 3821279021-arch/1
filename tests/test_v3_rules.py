@@ -331,7 +331,7 @@ class V3RulesTests(unittest.TestCase):
         self.assertEqual(game.phase, "last_words")
 
     def test_every_catalogued_role_has_real_rules_and_skill_hooks(self):
-        self.assertEqual(len(ROLE_DEFINITIONS), 12)
+        self.assertEqual(len(ROLE_DEFINITIONS), 16)
         for key, definition in ROLE_DEFINITIONS.items():
             self.assertEqual(key, definition.key)
             self.assertTrue(definition.rules)

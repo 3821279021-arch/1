@@ -1,0 +1,81 @@
+{
+  "version": "3.2.0",
+  "items": [
+    {
+      "id": "P1-MODELS",
+      "priority": "P1",
+      "title": "模型收藏/搜索/最近状态/阵容预设",
+      "status": "implemented_and_verified",
+      "evidence": [
+        "tests/test_v32_preferences.py",
+        "tests/browser_v32.py"
+      ]
+    },
+    {
+      "id": "P1-PACING",
+      "priority": "P1",
+      "title": "AI思考反馈/流式阅读节奏/自然发言长度",
+      "status": "implemented_and_verified",
+      "evidence": [
+        "tests/speech_buffer.mjs",
+        "tests/test_v32_preferences.py"
+      ]
+    },
+    {
+      "id": "P0-ROOMS",
+      "priority": "P0",
+      "title": "无人房间暂停/停止API/内存卸载/TTL",
+      "status": "implemented_and_verified",
+      "evidence": [
+        "tests/test_v32_rooms.py",
+        "tests/test_privacy_review.py"
+      ]
+    },
+    {
+      "id": "P0-AUDIO",
+      "priority": "P0",
+      "title": "BGM/主持人语音/音效/可靠音频解锁",
+      "status": "implemented_and_verified",
+      "evidence": [
+        "tests/browser_v32.py",
+        "app/static/assets/audio/manifest-v32.json"
+      ]
+    },
+    {
+      "id": "P2-ROLES",
+      "priority": "P2",
+      "title": "多板子/约束随机/自定义随机池/扩角色",
+      "status": "implemented_and_verified",
+      "evidence": [
+        "tests/test_v32_play.py",
+        "tests/test_v3_rules.py"
+      ]
+    },
+    {
+      "id": "P1-UI",
+      "priority": "P1",
+      "title": "底部导航/App Shell/游戏沉浸态",
+      "status": "implemented_and_verified",
+      "evidence": [
+        "tests/browser_v32.py"
+      ]
+    }
+  ],
+  "baseline": "V3.1.0 Reproducible Arena",
+  "selected_package": 4,
+  "verification": {
+    "python_tests": 241,
+    "python_passed": 241,
+    "coverage_percent": 88,
+    "browser_checks": 121,
+    "browser_page_errors": 0,
+    "presentation_tests": 10,
+    "role_count": 16,
+    "decoded_audio_files": 42,
+    "mock_new_boards_completed": 7,
+    "real_provider_calls": 0,
+    "paid_tts_calls": 0,
+    "physical_ios_audio_tested": false,
+    "tournament_implemented": false
+  }
+}

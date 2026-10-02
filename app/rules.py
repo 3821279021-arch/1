@@ -12,7 +12,7 @@ from typing import Any
 from .game import PERSONALITIES, PHASE_NAMES, PROVIDERS, TIMINGS, PetAI, Player, WerewolfGame
 from .rng import GameRNG  # Preserve V3 test/extension patch point.
 from .rng import random as random
-from .roles import NIGHT_SKILLS, ROLE_DEFINITIONS, validate_mode
+from .roles import NIGHT_SKILLS, ROLE_DEFINITIONS
 
 log = logging.getLogger("werewolf.lifecycle")
 
@@ -136,6 +136,8 @@ class RuleEngine:
         mode: str | None = None,
         player_count: int | None = None,
         roles: list[str] | None = None,
+        board_policy: str | None = None,
+        random_role_pool: list[str] | None = None,
     ) -> None:
         if owner_id != self.g.host_id or self.g.phase != "lobby":
             raise ValueError("只有房主可以在开始前配置房间")
@@ -144,7 +146,16 @@ class RuleEngine:
         selected_count = (
             player_count if player_count is not None else (self.g.player_count if selected_mode == "custom" else None)
         )
-        next_mode, next_count, next_roles = validate_mode(selected_mode, selected_count, selected_roles)
+        from .boards import configuration
+
+        policy = board_policy if board_policy is not None else self.g.board_policy
+        next_mode, next_count, next_roles, next_pool = configuration(
+            selected_mode,
+            selected_count,
+            selected_roles,
+            policy,
+            random_role_pool if random_role_pool is not None else self.g.random_role_pool,
+        )
         if any(p.id > next_count for p in self.g.players):
             raise ValueError("人数减少前请先调整超出人数的座位")
         if pace not in TIMINGS:
@@ -182,6 +193,7 @@ class RuleEngine:
                 raise ValueError("模型参数须为对象")
         self.g.pace = pace
         self.g.mode, self.g.player_count, self.g.role_roster = next_mode, next_count, next_roles
+        self.g.board_policy, self.g.random_role_pool = policy, next_pool
         self.g.seat_presets = {key: value for key, value in self.g.seat_presets.items() if int(key) <= next_count}
         if unique_model_per_ai_seat is not None:
             self.g.unique_model_per_ai_seat = unique_model_per_ai_seat
@@ -229,6 +241,10 @@ class RuleEngine:
                     )
                 )
         self.g.players.sort(key=lambda p: p.id)
+        if self.g.board_policy != "fixed":
+            from .boards import generate_board
+
+            self.g.role_roster = generate_board(self.g.player_count, self.g.random_role_pool, self.rng)
         roles = list(self.g.role_roster)
         self.rng.shuffle(roles)
         for p, role in zip(self.g.players, roles):
@@ -279,6 +295,8 @@ class RuleEngine:
                     for p in players
                     if p.role_state.get("antidote", g.witch_antidote) or p.role_state.get("poison", g.witch_poison)
                 ]
+            if action == "grave_inspect":
+                players = [p for p in players if NIGHT_SKILLS[phase][2](g, p)]
             return [p.id for p in players]
         if phase == "day_vote":
             return [p.id for p in g.alive_players() if not p.role_state.get("vote_disabled")]
@@ -318,7 +336,12 @@ class RuleEngine:
     @property
     def night_phases(self) -> tuple[str, ...]:
         # The role catalogue owns night scheduling, including extra wolf skills.
-        phases = [(ROLE_DEFINITIONS[role].night_order or 30, phase) for phase, (role, _, _, _) in NIGHT_SKILLS.items()]
+        phases = [
+            (ROLE_DEFINITIONS[role].night_order or 30, phase)
+            for phase, (role, _, _, _) in NIGHT_SKILLS.items()
+            if role not in {"dreamer", "gravekeeper", "crow"}
+            or role in (self.g.random_role_pool if self.g.board_policy != "fixed" else self.g.role_roster)
+        ]
         # Wolf beauty participates in the communal kill at 20 and charms at 30.
         phases = [(30 if phase == "night_beauty" else order, phase) for order, phase in phases]
         return ("night_discussion",) + tuple(phase for _, phase in sorted(phases + [(20, "night_wolves")]))
@@ -335,6 +358,9 @@ class RuleEngine:
                 "witch": "女巫用药",
                 "guard_protect": "守护",
                 "wolf_beauty_charm": "魅惑",
+                "dream_visit": "摄梦人梦游",
+                "grave_inspect": "守墓人查验",
+                "crow_mark": "乌鸦标记",
                 "hunter_shoot": "猎人开枪",
                 "wolf_king_shoot": "狼王开枪",
                 "duel": "骑士决斗",
@@ -430,6 +456,9 @@ class RuleEngine:
             "wolf_king_shoot",
             "duel",
             "self_destruct",
+            "dream_visit",
+            "grave_inspect",
+            "crow_mark",
         }
         if pending["type"] in target_actions and not target_valid(payload.get("target")):
             raise ValueError("目标不合法")
@@ -589,7 +618,7 @@ class RuleEngine:
     def tick(self, now: float | None = None) -> bool:
         now = time.time() if now is None else now
         g = self.g
-        if g.turn_deadline is None or now < g.turn_deadline or g.game_over:
+        if g.lifecycle != "ACTIVE" or g.turn_deadline is None or now < g.turn_deadline or g.game_over:
             return False
         if g.phase in self.night_phases:
             # Only missing actors time out; legal submissions retain their effects.
@@ -605,6 +634,12 @@ class RuleEngine:
                         g.player(pid).role_state["last_guard_target"] = None
                     elif g.phase == "night_beauty":
                         g.player(pid).role_state.update(charmed_target=None, last_charm_target=None)
+                    elif g.phase == "night_dreamer":
+                        g.player(pid).role_state.update(
+                            dream_target=None, last_dream_target=None, dream_day=g.day, dream_repeat=False
+                        )
+                    elif g.phase == "night_crow":
+                        g.player(pid).role_state.update(crow_target=None, last_crow_target=None, crow_day=g.day)
                     g.action_history.append(
                         {
                             "day": g.day,
@@ -652,11 +687,21 @@ class RuleEngine:
         g = self.g
         guards = set(g.night_guards.values())
         poisoned = set(g.night_poisons + ([g.night_poison] if g.night_poison is not None else []))
+        dream_targets = {
+            p.role_state.get("dream_target")
+            for p in g.alive_players()
+            if p.role == "dreamer" and p.role_state.get("dream_day") == g.day
+        }
+        guards |= dream_targets
+        poisoned -= dream_targets
         knife = g.night_kill if g.night_kill not in guards else None
         dead = sorted({pid for pid in ([knife] + list(poisoned)) if pid is not None and g.player(pid).alive})
         g.death_context = {"after": "day_speech", "dead": []}
         for pid in dead:
             self.kill_player(pid, cause="poison" if pid in poisoned else "knife")
+        from .roles import dawn_effects
+
+        dawn_effects(self)
         deaths = sorted(g.death_context["dead"])
         self.record(
             "death",
@@ -667,6 +712,21 @@ class RuleEngine:
     def resolve_vote(self, now: float | None = None) -> None:
         g = self.g
         tally = Counter(target for target in g.votes.values() if target is not None)
+        crow_votes = Counter(
+            p.role_state["crow_target"]
+            for p in g.players
+            if p.role == "crow"
+            and p.role_state.get("crow_day") == g.day
+            and p.role_state.get("crow_target") is not None
+            and g.player(p.role_state["crow_target"]).alive
+        )
+        tally.update(crow_votes)
+        if crow_votes:
+            self.record(
+                "skill",
+                "乌鸦标记额外票：" + "、".join(f"{pid}号 +{count}" for pid, count in sorted(crow_votes.items())) + "。",
+                bonus_votes=dict(crow_votes),
+            )
         self.record(
             "vote",
             "投票结果："
@@ -738,6 +798,10 @@ class RuleEngine:
             self.enter("death_skill", skill["player_id"], now)
             return
         g.death_skill_action = None
+        if g.death_context.get("after") == "day_speech":
+            from .roles import dawn_effects
+
+            dawn_effects(self, final=True)
         if self.check_win(now):
             return
         context = g.death_context or {"after": "day_speech", "dead": []}
@@ -938,6 +1002,38 @@ class RuleEngine:
         self.g.turn_deadline = None
         self.emit("room_closed", {"lifecycle": "ARCHIVED"})
 
+    def suspend(self, now: float | None = None) -> bool:
+        if self.g.lifecycle != "ACTIVE":
+            return False
+        now = time.time() if now is None else now
+        self.g.suspended_remaining = max(0, self.g.turn_deadline - now) if self.g.turn_deadline is not None else None
+        self.g.suspended_at = now
+        self.g.turn_deadline = None
+        self.g.lifecycle = "SUSPENDED"
+        self.emit("room_suspended", {"remaining_seconds": self.g.suspended_remaining})
+        return True
+
+    def resume(self, owner_id: str, now: float | None = None) -> None:
+        self._owned_player(owner_id)
+        if self.g.lifecycle != "SUSPENDED":
+            raise ValueError("对局没有暂停")
+        now = time.time() if now is None else now
+        if self.g.turn_started_at is not None and self.g.suspended_at is not None:
+            self.g.turn_started_at += max(0, now - self.g.suspended_at)
+        self.g.turn_deadline = now + self.g.suspended_remaining if self.g.suspended_remaining is not None else None
+        self.g.lifecycle = "ACTIVE"
+        self.g.suspended_at = None
+        self.g.suspended_remaining = None
+        # A cancelled public stream is retried from its beginning, once. A human
+        # draft lives in the client and is not discarded here.
+        if self.g.current_turn_player_id is not None:
+            p = self.g.player(self.g.current_turn_player_id)
+            if not p.owner_id or (
+                self.g.pets[p.owner_id].control_mode == "autopilot" or self.g.pets[p.owner_id].delegate_next
+            ):
+                self.g.current_speech = ""
+        self.emit("room_resumed", {"turn_deadline": self.g.turn_deadline})
+
     def rematch(self, owner_id: str) -> None:
         if self.g.host_id != owner_id or not self.g.game_over:
             raise ValueError("只有房主可以在结束后再来一局")
@@ -968,6 +1064,8 @@ class RuleEngine:
             mode=old.mode,
             player_count=old.player_count,
             role_roster=list(old.role_roster),
+            board_policy=old.board_policy,
+            random_role_pool=list(old.random_role_pool),
             creation_action_id=old.creation_action_id,
             locked=old.locked,
             password_hash=old.password_hash,

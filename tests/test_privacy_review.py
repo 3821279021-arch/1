@@ -59,7 +59,10 @@ class PrivacyLifecycleReviewTests(unittest.TestCase):
         room = self.room("archive-in-memory")
         old_revision = room.game.state_revision
         old_game_id = room.game.game_id
-        self.manager.maintenance(self.now)
+        # Inspect the authoritative archival step before V3.2's immediate TTL
+        # purge. A normal maintenance call below must then remove all state.
+        with patch.object(self.store, "cleanup_expired_rooms", return_value=[]):
+            self.manager.maintenance(self.now)
         self.assertEqual(room.game.lifecycle, "ARCHIVED")
         self.assertIs(room.engine.g, room.game)
         stored = self.store.get(room.game.room_id)
@@ -73,6 +76,9 @@ class PrivacyLifecycleReviewTests(unittest.TestCase):
         self.manager.commit(room)
         self.assertEqual(self.store.get(room.game.room_id).lifecycle, "ARCHIVED")
         self.assertEqual(self.store.get(room.game.room_id).state_revision, snapshot["state_revision"])
+        self.manager.maintenance(self.now)
+        self.assertIsNone(self.store.get(room.game.room_id))
+        self.assertNotIn(room.game.room_id, self.manager.rooms)
 
     def test_connected_finished_room_stays_finished_until_disconnected(self):
         room = self.room("connected-finished")
@@ -88,7 +94,8 @@ class PrivacyLifecycleReviewTests(unittest.TestCase):
         room.connections.remove(connection)
         self.manager.maintenance(self.now)
         self.assertEqual(room.game.lifecycle, "ARCHIVED")
-        self.assertEqual(self.store.get(room.game.room_id).lifecycle, "ARCHIVED")
+        self.assertIsNone(self.store.get(room.game.room_id))
+        self.assertEqual(self.store.completed_list(room.game.room_id), [])
 
     def test_connected_lobby_and_active_clocks_are_protected(self):
         lobby = self.room("connected-lobby", "LOBBY")
@@ -155,6 +162,10 @@ class PrivacyLifecycleReviewTests(unittest.TestCase):
     def test_unloaded_archive_lazy_load_keeps_latest_authoritative_revision(self):
         room = self.room("archive-unload")
         old_revision = room.game.state_revision
+        # Manually closed archives keep the legacy retention window; automatic
+        # TTL expiry now purges immediately rather than remaining reloadable.
+        room.engine.close_room("owner")
+        self.manager.commit(room)
         room.last_access = self.now - 120
         self.manager.unload_seconds = 60
         self.manager.maintenance(self.now)

@@ -101,7 +101,7 @@ def shoot_action(e, p, payload):
 
 
 def shoot_on_death(e, p, cause):
-    if cause not in {"poison", "charm"} and not p.role_state.get("shot_used"):
+    if cause not in {"poison", "charm", "dream"} and not p.role_state.get("shot_used"):
         e.g.death_skill_queue.append(
             {"player_id": p.id, "action": "hunter_shoot" if p.role == "hunter" else "wolf_king_shoot"}
         )
@@ -116,6 +116,66 @@ def charm_on_death(e, p, cause):
 
 def no_action(e, p, payload):
     return None
+
+
+def dead_targets(g, p):
+    inspected = p.role_state.get("grave_inspected", [])
+    return [q.id for q in g.players if not q.alive and q.id not in inspected]
+
+
+def grave_action(e, p, payload):
+    target = payload.get("target")
+    if target is not None:
+        faction = "狼人" if ROLE_DEFINITIONS[e.g.player(target).role].faction == "wolves" else "好人"
+        p.role_state.setdefault("grave_inspected", []).append(target)
+        p.private_notes.append(f"第{e.g.day}夜守墓查验：已出局的{target}号属于{faction}阵营。")
+
+
+def dream_action(e, p, payload):
+    target = payload.get("target")
+    p.role_state["dream_repeat"] = target is not None and target == p.role_state.get("last_dream_target")
+    p.role_state.update(dream_target=target, last_dream_target=target, dream_day=e.g.day)
+    p.private_notes.append(f"第{e.g.day}夜梦游目标：{target or '跳过'}。梦游不确认身份。")
+
+
+def dream_on_death(e, p, cause):
+    night = e.g.phase.startswith("night_") or (
+        e.g.phase == "death_skill" and e.g.death_context.get("after") == "day_speech"
+    )
+    target = p.role_state.get("dream_target")
+    if night and p.role_state.get("dream_day") == e.g.day and target is not None and e.g.player(target).alive:
+        e.kill_player(target, cause="dream")
+
+
+def crow_targets(g, p):
+    return [pid for pid in other_alive(g, p) if pid != p.role_state.get("last_crow_target")]
+
+
+def crow_action(e, p, payload):
+    target = payload.get("target")
+    p.role_state.update(crow_target=target, last_crow_target=target, crow_day=e.g.day)
+    p.private_notes.append(f"第{e.g.day}夜标记：{target or '跳过'}。标记者不获知目标身份。")
+
+
+def dawn_effects(e, *, final=False):
+    """Only the four new roles use these hooks; old rosters are unchanged."""
+    g = e.g
+    if not final:
+        for p in g.players:
+            if p.role == "dreamer" and p.role_state.get("dream_day") == g.day and p.role_state.get("dream_repeat"):
+                target = p.role_state.get("dream_target")
+                if target is not None:
+                    e.kill_player(target, cause="dream")
+        return
+    alive = sorted(g.alive_players(), key=lambda p: p.id)
+    for p in alive:
+        if p.role == "bear_trainer" and p.role_state.get("bear_day") != g.day:
+            index = alive.index(p)
+            neighbors = {alive[(index - 1) % len(alive)].id, alive[(index + 1) % len(alive)].id} - {p.id}
+            growl = any(ROLE_DEFINITIONS[g.player(pid).role].faction == "wolves" for pid in neighbors)
+            p.role_state.update(bear_day=g.day, bear_growled=growl)
+            p.private_notes.append(f"第{g.day}天熊{'咆哮' if growl else '没有咆哮'}；相邻指最近的两个存活座位。")
+            e.record("skill", "天亮时熊咆哮了。" if growl else "天亮时熊没有咆哮。", bear_growled=growl)
 
 
 @dataclass(frozen=True)
@@ -145,6 +205,7 @@ class RoleDefinition:
             "rules": self.rules,
             "night_order": self.night_order,
             "action_schema": dict(self.action_schema),
+            "tags": list(ROLE_TAGS.get(self.key, ())),
         }
 
 
@@ -232,6 +293,64 @@ ROLE_DEFINITIONS = {
         "wolves",
         "属于狼阵营，查验显示好人；知道普通狼队但普通狼不知道隐狼，不能使用狼频道或刀人。普通刀狼全部死亡后觉醒，获得狼频道与刀人。",
     ),
+    "dreamer": RoleDefinition(
+        "dreamer",
+        "摄梦人",
+        "good",
+        "每夜选择一名其他存活者或跳过。当晚梦游目标免疫狼刀与毒药；连续两夜梦游同一人，该人梦死。摄梦人夜间死亡，当晚目标同时梦死；梦死不能开枪。白天死亡不牵连。",
+        5,
+        "night_dreamer",
+        "dream_visit",
+        apply_action=dream_action,
+        death_trigger=dream_on_death,
+    ),
+    "gravekeeper": RoleDefinition(
+        "gravekeeper",
+        "守墓人",
+        "good",
+        "每夜私下查验一名已出局玩家的真实阵营（含隐狼），每人只能查验一次，可跳过；没有未查验的死者时不行动。信息仅本人可见。",
+        65,
+        "night_grave",
+        "grave_inspect",
+        legal_targets=dead_targets,
+        apply_action=grave_action,
+    ),
+    "crow": RoleDefinition(
+        "crow",
+        "乌鸦",
+        "good",
+        "每夜标记一名其他存活者或跳过，不可连续标记同一人。当日放逐结算额外增加该目标一票；标记提交后即使乌鸦死亡仍有效，目标已死则不计票。标记不确认身份。",
+        60,
+        "night_crow",
+        "crow_mark",
+        legal_targets=crow_targets,
+        apply_action=crow_action,
+    ),
+    "bear_trainer": RoleDefinition(
+        "bear_trainer",
+        "驯熊师",
+        "good",
+        "无主动夜间动作。夜间死亡全部结算后，存活驯熊师最近的左右两个存活座位若含狼阵营（含隐狼），熊公开咆哮；不公开驯熊师座位或哪一侧是狼。技能与死亡结算完成后才判胜。",
+    ),
+}
+
+ROLE_TAGS = {
+    "villager": ("基础",),
+    "wolf": ("基础狼",),
+    "seer": ("信息型",),
+    "witch": ("保护型", "资源型", "击杀型"),
+    "guard": ("保护型",),
+    "hunter": ("击杀型", "死亡触发型"),
+    "knight": ("击杀型", "控制型"),
+    "idiot": ("控制型",),
+    "wolf_king": ("强狼", "死亡触发型"),
+    "white_wolf_king": ("强狼", "击杀型"),
+    "wolf_beauty": ("强狼", "死亡触发型"),
+    "hidden_wolf": ("隐蔽狼",),
+    "dreamer": ("保护型", "死亡触发型"),
+    "gravekeeper": ("信息型",),
+    "crow": ("控制型",),
+    "bear_trainer": ("信息型",),
 }
 
 # Extra night actions belong to a role without replacing its faction action.
@@ -240,6 +359,9 @@ NIGHT_SKILLS = {
     "night_beauty": ("wolf_beauty", "wolf_beauty_charm", charm_targets, charm_action),
     "night_seer": ("seer", "seer_inspect", other_alive, seer_action),
     "night_witch": ("witch", "witch", other_alive, witch_action),
+    "night_dreamer": ("dreamer", "dream_visit", other_alive, dream_action),
+    "night_grave": ("gravekeeper", "grave_inspect", dead_targets, grave_action),
+    "night_crow": ("crow", "crow_mark", crow_targets, crow_action),
 }
 
 
@@ -269,7 +391,11 @@ class GameMode:
             "display_name": self.display_name,
             "player_count": self.player_count,
             "roles": list(self.roles),
-            "phases": list(self.phases),
+            "phases": list(
+                dict.fromkeys(
+                    (*self.phases, *(ROLE_DEFINITIONS[r].phase for r in self.roles if ROLE_DEFINITIONS[r].phase))
+                )
+            ),
             "speaking_rules": self.speaking_rules,
             "voting_rules": self.voting_rules,
             "special_rules": self.special_rules,
@@ -281,6 +407,34 @@ GAME_MODES = {
     "standard9": GameMode("standard9", "9 人标准", 9, ("wolf",) * 3 + ("seer", "witch", "hunter") + ("villager",) * 3),
     "standard12": GameMode(
         "standard12", "12 人标准", 12, ("wolf",) * 4 + ("seer", "witch", "hunter", "guard") + ("villager",) * 4
+    ),
+    "wolfking12": GameMode(
+        "wolfking12",
+        "12 人狼王板",
+        12,
+        ("wolf_king",) + ("wolf",) * 3 + ("seer", "witch", "hunter", "guard") + ("villager",) * 4,
+    ),
+    "beautyknight12": GameMode(
+        "beautyknight12",
+        "12 人狼美人骑士板",
+        12,
+        ("wolf_beauty",) + ("wolf",) * 3 + ("seer", "witch", "knight", "guard") + ("villager",) * 4,
+    ),
+    "hidden12": GameMode(
+        "hidden12",
+        "12 人隐狼板",
+        12,
+        ("hidden_wolf",) + ("wolf",) * 3 + ("seer", "witch", "hunter", "guard") + ("villager",) * 4,
+    ),
+    "advanced9": GameMode(
+        "advanced9", "9 人进阶板", 9, ("wolf_king", "wolf", "wolf", "seer", "witch", "knight") + ("villager",) * 3
+    ),
+    "fun6": GameMode("fun6", "6 人娱乐板", 6, ("wolf", "wolf", "seer", "hunter", "villager", "villager")),
+    "special12": GameMode(
+        "special12",
+        "12 人梦熊鸦墓板",
+        12,
+        ("wolf",) * 4 + ("dreamer", "bear_trainer", "crow", "gravekeeper") + ("villager",) * 4,
     ),
 }
 MODE_ALIASES = {

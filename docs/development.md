@@ -26,6 +26,8 @@ GAME_TIME_SCALE=0.12 AI_TURN_PAUSE=0.01 AI_CHUNK_DELAY=0.001 uvicorn app.main:ap
 python tests/wait_for_server.py
 python tests/browser_v3.py
 python tests/browser_v31.py
+python tests/browser_v32.py
+node --test tests/speech_buffer.mjs
 ```
 
 CI 生成 coverage XML/HTML、依赖审计 JSON、浏览器报告/截图。coverage 首次记录真实水平，后续调整须说明理由；不为了数字镜像实现造测试。审计不预设漏洞豁免。
