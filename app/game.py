@@ -224,6 +224,8 @@ class WerewolfGame:
     state_revision: int = 0
     seat_presets: dict[str, dict[str, Any]] = field(default_factory=dict)
     unique_model_per_ai_seat: bool = True
+    ai_performance_profile: str = "balanced"
+    ai_performance_custom: dict[str, Any] = field(default_factory=dict)
     processed_actions: dict[str, dict[str, Any]] = field(default_factory=dict)
     lifecycle: str = "LOBBY"
     suspended_at: float | None = None
@@ -275,6 +277,11 @@ class WerewolfGame:
             raise ValueError("未知板子策略")
         if self.board_policy != "fixed":
             candidates(self.player_count, self.random_role_pool)
+        from .performance import validate_performance
+
+        self.ai_performance_profile, self.ai_performance_custom = validate_performance(
+            self.ai_performance_profile, self.ai_performance_custom
+        )
 
     def wolf_actors(self) -> list[Player]:
         regular = [p for p in self.alive_players() if ROLE_DEFINITIONS[p.role].participates_in_kill]
@@ -311,6 +318,8 @@ class WerewolfGame:
         # Legacy snapshots remain unseeded and retain their historical versions.
         value.setdefault("ruleset_version", "werewolf-v3.0")
         value.setdefault("prompt_version", "autonomous-v3.0")
+        value.setdefault("ai_performance_profile", "balanced")
+        value.setdefault("ai_performance_custom", {})
         migrated_real_seats = False
         defaults = {
             "openai": "gpt-4.1-mini",

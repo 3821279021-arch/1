@@ -106,6 +106,18 @@
     },
     "metadata": {
       "type": "object"
+    },
+    "ai_performance_profile": {
+      "type": "string",
+      "enum": [
+        "economy",
+        "balanced",
+        "unrestricted",
+        "custom"
+      ]
+    },
+    "ai_performance": {
+      "type": "object"
     }
   },
   "additionalProperties": true

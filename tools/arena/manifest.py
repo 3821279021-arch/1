@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from app.performance import resolve_performance
 from app.trace import redact, utc_now
 from app.versions import APP_VERSION, PROMPT_VERSION, RULESET_VERSION, SCHEMA_VERSION
 
@@ -58,6 +59,10 @@ def make_manifest(config: dict[str, Any], experiment_id: str) -> dict[str, Any]:
             "seat_policy": config["seat_policy"],
             "role_policy": config["role_policy"],
             "paired_seeds": config["paired_seeds"],
+            "ai_performance_profile": config["ai_performance_profile"],
+            "ai_performance": resolve_performance(
+                config["ai_performance_profile"], config["ai_performance_custom"]
+            ),
             "lineups": config["lineups"],
             "agents": agents,
             "prompt_version": PROMPT_VERSION,

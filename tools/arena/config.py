@@ -9,6 +9,7 @@ from typing import Any
 
 from app.credentials import normalize_base_url, validate_model_id, validate_model_options
 from app.game import PERSONALITIES
+from app.performance import validate_performance
 from app.roles import validate_mode
 
 PROVIDERS = {"mock", "openai", "anthropic", "gemini", "dashscope", "openai-compatible"}
@@ -36,6 +37,8 @@ def validate_config(raw: dict[str, Any]) -> dict[str, Any]:
         "limits",
         "prices",
         "price_table_version",
+        "ai_performance_profile",
+        "ai_performance_custom",
     }
     if set(raw) - allowed:
         raise ValueError("Unknown config fields: " + ", ".join(sorted(set(raw) - allowed)))
@@ -54,6 +57,13 @@ def validate_config(raw: dict[str, Any]) -> dict[str, Any]:
     if config["role_policy"] != "ruleset_seeded":
         raise ValueError("Only ruleset_seeded role policy is supported in V3.1")
     config.setdefault("paired_seeds", True)
+    config.setdefault("ai_performance_profile", "balanced")
+    config.setdefault("ai_performance_custom", {})
+    profile, custom_performance = validate_performance(
+        config["ai_performance_profile"], config["ai_performance_custom"]
+    )
+    config["ai_performance_profile"] = profile
+    config["ai_performance_custom"] = custom_performance
     if type(config["paired_seeds"]) is not bool:
         raise ValueError("paired_seeds must be boolean")
     rules = config.get("ruleset", {})

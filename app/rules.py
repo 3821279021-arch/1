@@ -10,6 +10,7 @@ from copy import deepcopy
 from typing import Any
 
 from .game import PERSONALITIES, PHASE_NAMES, PROVIDERS, TIMINGS, PetAI, Player, WerewolfGame
+from .performance import validate_performance
 from .rng import GameRNG  # Preserve V3 test/extension patch point.
 from .rng import random as random
 from .roles import NIGHT_SKILLS, ROLE_DEFINITIONS
@@ -138,6 +139,8 @@ class RuleEngine:
         roles: list[str] | None = None,
         board_policy: str | None = None,
         random_role_pool: list[str] | None = None,
+        ai_performance_profile: str | None = None,
+        ai_performance_custom: dict[str, Any] | None = None,
     ) -> None:
         if owner_id != self.g.host_id or self.g.phase != "lobby":
             raise ValueError("只有房主可以在开始前配置房间")
@@ -162,6 +165,10 @@ class RuleEngine:
             raise ValueError("未知速度")
         if unique_model_per_ai_seat is not None and type(unique_model_per_ai_seat) is not bool:
             raise ValueError("独立模型设置必须为布尔值")
+        profile, custom_performance = validate_performance(
+            ai_performance_profile or self.g.ai_performance_profile,
+            ai_performance_custom if ai_performance_profile == "custom" or ai_performance_custom is not None else self.g.ai_performance_custom,
+        )
         if not isinstance(seats, list) or any(
             not isinstance(entry, dict) or type(entry.get("id")) is not int for entry in seats
         ):
@@ -197,6 +204,8 @@ class RuleEngine:
         self.g.seat_presets = {key: value for key, value in self.g.seat_presets.items() if int(key) <= next_count}
         if unique_model_per_ai_seat is not None:
             self.g.unique_model_per_ai_seat = unique_model_per_ai_seat
+        self.g.ai_performance_profile = profile
+        self.g.ai_performance_custom = deepcopy(custom_performance)
         for entry in seats:
             self.g.seat_presets[str(entry["id"])] = {
                 "id": entry["id"],
@@ -465,13 +474,13 @@ class RuleEngine:
         if pending.get("requires_target") and payload.get("target") is None:
             raise ValueError("技能须指定存活目标")
         if pending["type"] == "speech" and (
-            not isinstance(payload.get("speech", ""), str) or len(payload.get("speech", "")) > 500
+            not isinstance(payload.get("speech", ""), str) or len(payload.get("speech", "")) > 4000
         ):
-            raise ValueError("发言最多 500 字")
+            raise ValueError("发言超过系统传输上限")
         if pending["type"] == "wolf_discuss" and (
-            not isinstance(payload.get("text", ""), str) or len(payload.get("text", "")) > 500
+            not isinstance(payload.get("text", ""), str) or len(payload.get("text", "")) > 4000
         ):
-            raise ValueError("狼队讨论最多 500 字")
+            raise ValueError("狼队讨论超过系统传输上限")
         if pending["type"] == "witch":
             if type(payload.get("save", False)) is not bool:
                 raise ValueError("解药选择无效")
@@ -570,7 +579,7 @@ class RuleEngine:
             return False
         if (time.time() if now is None else now) >= (g.turn_deadline or 0):
             return False
-        chunk = chunk[: max(0, 500 - len(g.current_speech))]
+        chunk = chunk[: max(0, 4000 - len(g.current_speech))]
         if not g.current_speech:
             self.emit("speech_started", {"player_id": pid})
         g.current_speech += chunk
@@ -1061,6 +1070,8 @@ class RuleEngine:
             pace=old.pace,
             seat_presets=presets,
             unique_model_per_ai_seat=old.unique_model_per_ai_seat,
+            ai_performance_profile=old.ai_performance_profile,
+            ai_performance_custom=deepcopy(old.ai_performance_custom),
             mode=old.mode,
             player_count=old.player_count,
             role_roster=list(old.role_roster),

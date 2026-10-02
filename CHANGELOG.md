@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.3.0 — AI Performance Profiles
+
+- 新增 Economy / Balanced / Unrestricted / Custom 四档 AI Performance Profile。
+- 将合法信息边界与软性能限制分离：身份隔离、动作校验、凭据保护和服务端总预算始终开启。
+- Unrestricted 使用完整合法历史、64k prompt 预算、16k 模型输出上限，并取消强制简洁与强制发言。
+- Custom 可配置上下文预算、历史策略、模型输出、reasoning effort、thinking budget、公开发言长度与强制发言策略。
+- AI 可用 `<SKIP_SPEECH>` 主动结束公开发言；该控制标记不会出现在公开桌面。
+- Arena manifest 记录性能档位与完整有效参数，便于区分 Capability Track 与 Efficiency Track。
+- 单次公开发言的系统传输上限提升至 4000 字；具体软上限由性能档位控制。
+
+
 ## 3.2.0 — 产品体验与可玩性
 
 - 最后在线真人离开立即暂停；断线宽限 45 秒，冻结/显式继续、任务取消、闲置卸载与私有数据 TTL 清理。

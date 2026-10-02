@@ -9,10 +9,25 @@ function renderProviders(s){
  for(const option of runtime.$('petProvider').options){const available=option.value==='mock'||rows.some(m=>m.provider===option.value&&runtime.modelAvailable(m))||providers[option.value]?.configured;option.disabled=!available;option.textContent=`${runtime.providerNames[option.value]||option.value} · ${available?(option.value==='mock'?'本地模拟':'可用'):'未配置'}`;}
 }
 function seatPreset(s,id){return Array.isArray(s.seat_presets)?s.seat_presets.find(p=>p.id===id):s.seat_presets?.[String(id)];}
+
+const performanceDescriptions={economy:'压低上下文与输出预算，适合低成本试玩。',balanced:'保留当前体验与成本平衡，适合作为默认模式。',unrestricted:'完整历史、64k prompt 预算、最高 16k 输出，不强制简洁或必须发言。费用可能显著增加。',custom:'逐项控制上下文、输出、推理和表达限制。'};
+function setOptionalNumber(id,value){runtime.$(id).value=value===null||value===undefined?'':String(value);}
+function renderPerformanceConfig(s){
+ const profile=s.ai_performance_profile||'balanced',p=s.ai_performance||{};
+ runtime.$('aiPerformanceProfile').value=profile;runtime.$('aiPerformanceSummary').textContent=performanceDescriptions[profile]||'';
+ runtime.$('aiPerformanceCustom').classList.toggle('hidden',profile!=='custom');
+ setOptionalNumber('perfPromptTokens',p.prompt_token_limit??6000);setOptionalNumber('perfOutputTokens',p.max_output_tokens??1200);runtime.$('perfHistoryMode').value=p.history_mode||'hybrid';setOptionalNumber('perfRecentEvents',p.recent_events_limit);runtime.$('perfReasoning').value=p.reasoning_effort||'';setOptionalNumber('perfThinkingBudget',p.thinking_budget);setOptionalNumber('perfSpeechChars',p.speech_character_limit);runtime.$('perfForceConcise').checked=!!p.force_concise;runtime.$('perfForceSpeech').checked=p.force_speech!==false;
+}
+function readOptionalNumber(id){const value=runtime.$(id).value.trim();return value===''?null:Number(value);}
+function performanceConfig(){
+ const profile=runtime.$('aiPerformanceProfile').value;if(profile!=='custom')return {ai_performance_profile:profile,ai_performance_custom:{}};
+ const history=runtime.$('perfHistoryMode').value;return {ai_performance_profile:'custom',ai_performance_custom:{prompt_token_limit:Number(runtime.$('perfPromptTokens').value),max_output_tokens:readOptionalNumber('perfOutputTokens'),history_mode:history,recent_events_limit:history==='full'?null:readOptionalNumber('perfRecentEvents'),private_notes_limit:history==='full'?null:20,wolf_chat_limit:history==='full'?null:20,memory_compression:history==='full'?'minimal':'adaptive',reasoning_effort:runtime.$('perfReasoning').value||null,thinking_budget:readOptionalNumber('perfThinkingBudget'),enable_thinking:null,speech_character_limit:readOptionalNumber('perfSpeechChars'),wolf_discussion_character_limit:readOptionalNumber('perfSpeechChars'),force_concise:runtime.$('perfForceConcise').checked,force_speech:runtime.$('perfForceSpeech').checked}};
+}
+function updatePerformanceControls(){const profile=runtime.$('aiPerformanceProfile').value;runtime.$('aiPerformanceSummary').textContent=performanceDescriptions[profile]||'';runtime.$('aiPerformanceCustom').classList.toggle('hidden',profile!=='custom');if(profile==='custom'&&store.state?.ai_performance_profile!=='custom'){const p=store.state?.ai_performance||{};setOptionalNumber('perfPromptTokens',p.prompt_token_limit??6000);setOptionalNumber('perfOutputTokens',p.max_output_tokens??1200);runtime.$('perfHistoryMode').value=p.history_mode||'hybrid';setOptionalNumber('perfRecentEvents',p.recent_events_limit??12);runtime.$('perfReasoning').value=p.reasoning_effort||'';setOptionalNumber('perfThinkingBudget',p.thinking_budget);setOptionalNumber('perfSpeechChars',p.speech_character_limit);runtime.$('perfForceConcise').checked=!!p.force_concise;runtime.$('perfForceSpeech').checked=p.force_speech!==false;}}
 function renderConfig(s){
  const rows=runtime.registry(s),credentials=store.credentials||[],count=Number(s.player_count)||6;
- const key=JSON.stringify({players:s.players.map(p=>[p.id,p.is_human,p.name]),presets:s.seat_presets,models:rows,credentials,unique:s.unique_model_per_ai_seat,count});if(key===store.configKey)return;store.configKey=key;
- runtime.$('uniqueModels').checked=s.unique_model_per_ai_seat===true;
+ const key=JSON.stringify({players:s.players.map(p=>[p.id,p.is_human,p.name]),presets:s.seat_presets,models:rows,credentials,unique:s.unique_model_per_ai_seat,count,performance:s.ai_performance_profile,performanceConfig:s.ai_performance});if(key===store.configKey)return;store.configKey=key;
+ runtime.$('uniqueModels').checked=s.unique_model_per_ai_seat===true;runtime.renderPerformanceConfig(s);
  runtime.$('seatConfigs').innerHTML=Array.from({length:count},(_,i)=>{
   const id=i+1,human=s.players.find(p=>p.id===id&&p.is_human),p=runtime.seatPreset(s,id)||s.players.find(p=>p.id===id)||{};
   if(human)return `<div class="seat-config human-config"><strong>${id} 号</strong><span>真人 · ${runtime.esc(human.name)}</span></div>`;
@@ -35,4 +50,4 @@ function renderModelWarning(){
  runtime.$('modelWarning').classList.toggle('shared-warning',!unique);
 }
 async function loadRooms(){try{const rooms=await runtime.roomAPI.list();runtime.$('recentRooms').innerHTML=rooms.length?'<span class="muted">继续我的房间</span>'+rooms.filter(r=>r.lifecycle!=='DELETED').slice(-8).reverse().map(r=>`<button class="btn subtle" data-room="${r.room_id}">${runtime.esc(r.title)} · ${r.room_id}</button>`).join(''):'';}catch(e){runtime.notice(e.message);}}
-Object.assign(runtime,{options,registry,modelAvailable,modelHealth,renderProviders,seatPreset,renderConfig,renderModelWarning,loadRooms});
+Object.assign(runtime,{options,registry,modelAvailable,modelHealth,renderProviders,seatPreset,renderConfig,renderModelWarning,renderPerformanceConfig,performanceConfig,updatePerformanceControls,loadRooms});

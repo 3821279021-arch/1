@@ -14,6 +14,7 @@ from app.credentials import CredentialService
 from app.game import WerewolfGame
 from app.llm import LLMRouter
 from app.persistence import Store
+from app.performance import profile_model_parameters, resolve_performance
 from app.rng import GameRNG, derive_seed
 from app.roles import ROLE_DEFINITIONS
 from app.runtime_lock import RuntimeLock
@@ -122,7 +123,14 @@ def build_game(config: dict[str, Any], experiment_id: str, plan: dict[str, Any])
         }
         for i, key in enumerate(plan["agents_by_seat"])
     ]
-    engine.configure(game.host_id, "fast", seats, False)
+    engine.configure(
+        game.host_id,
+        "fast",
+        seats,
+        False,
+        ai_performance_profile=config["ai_performance_profile"],
+        ai_performance_custom=config["ai_performance_custom"],
+    )
     engine.start(game.host_id, now=100)
     for p in game.players:
         p.agent_id = f"{plan['game_id']}:seat-{p.id}"
@@ -293,7 +301,11 @@ async def play_game(
                 phase=game.phase,
                 request_id=f"{game.turn_id}:{pid}",
                 guard=budget,
-                model_parameters=agent["parameters"],
+                model_parameters=profile_model_parameters(
+                    resolve_performance(game.ai_performance_profile, game.ai_performance_custom),
+                    agent["parameters"],
+                ),
+                performance_profile=game.ai_performance_profile,
                 **bindings.get(agent["agent_id"], {}),
             ):
                 secondary = await ai.choose_secondary(view, p.model_key, p.personality, p.memory)

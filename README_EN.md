@@ -1,10 +1,10 @@
-# AI Werewolf · Play Experience V3.2.0
+# AI Werewolf · Play Experience V3.3.0
 
 [中文](README.md) · [License decision pending](LICENSE-DECISION.md) · [Benchmark](docs/benchmark.md)
 
 Multiplayer social deduction with humans and AI, now with reproducible environments and offline research batches. Supports 6/9/12 players and 4–16-player custom rosters, BYOK, dynamic provider/model catalogs, WebSockets, public replay, PWA and local audio/TTS.
 
-V3.2 adds suspended unattended rooms, local music/host announcements, paced speech display, owner-scoped model favorites and lineups, five-tab navigation, 16 complete roles and constrained random casual boards. Tournament & Evaluation moves to V3.3. See [V3.2 guide](docs/V3.2-PLAY-GUIDE.md) and [acceptance](docs/V3.2-ACCEPTANCE.md).
+V3.2 added suspended unattended rooms, local music/host announcements, paced speech display, owner-scoped model favorites and lineups, five-tab navigation, 16 complete roles and constrained random casual boards. V3.3 adds **AI Performance Profiles** (Economy / Balanced / Unrestricted / Custom) so capability runs can remove soft context/output/speech constraints while preserving information isolation, legal-action validation and operator budget guards. Arena manifests record the effective performance configuration. See [AI Performance Profiles](docs/AI-PERFORMANCE-PROFILES.md), [V3.2 guide](docs/V3.2-PLAY-GUIDE.md) and [acceptance](docs/V3.2-ACCEPTANCE.md).
 
 ![V3 game](docs/previews/v3/v3-12-desktop-stage.png)
 
@@ -35,3 +35,7 @@ Development: install `requirements-dev.txt`, then run Ruff check/format, Mypy, `
 Docs: [Reproducibility](docs/reproducibility.md), [Benchmark](docs/benchmark.md), [API V3.1](docs/API-V3.1.md), [Comparison](docs/V3.1-COMPARISON.md), [Acceptance](docs/V3.1-ACCEPTANCE.md), [Changelog](CHANGELOG.md), [Roadmap](ROADMAP.md). Historical V3 evidence is retained under `docs/`.
 
 Project license is **pending the owner's choice**, not automatically MIT/Apache-2.0. Existing Qwen third-party notice remains applicable. See [LICENSE](LICENSE) and [Third-party notices](THIRD-PARTY-NOTICES.md). Resolve licensing/provenance before public publication.
+
+## AI Performance Profiles (V3.3)
+
+Hosts can select **Economy / Balanced / Unrestricted / Custom** in AI seat assignment. `Unrestricted` minimizes soft application constraints for capability testing, while `Custom` exposes context, output, reasoning and speech controls. Information isolation, legal-action validation and server-side budget guards always remain enforced. See `docs/AI-PERFORMANCE-PROFILES.md`.

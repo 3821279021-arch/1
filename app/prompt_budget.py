@@ -9,7 +9,7 @@ from typing import Any
 from .tokens import estimate_tokens
 
 
-def fit_context(system: str, payload: dict[str, Any], budget: int) -> str:
+def fit_context(system: str, payload: dict[str, Any], budget: int, compression: str = "adaptive") -> str:
     cached_text = None
     cached_fits = False
 
@@ -26,6 +26,16 @@ def fit_context(system: str, payload: dict[str, Any], budget: int) -> str:
 
     if fits():
         return render()
+
+    if compression == "minimal":
+        # In capability-oriented modes preserve durable evidence first. Only
+        # discard oldest raw public events when the provider context budget is
+        # actually exceeded.
+        events = payload["player_view"].get("events", [])
+        while not fits() and events:
+            events.pop(0)
+        if fits():
+            return render()
 
     memory = payload["memory"]
     for key in ("self_history", "stances", "vote_history", "judgments", "facts", "check_claims", "claims"):

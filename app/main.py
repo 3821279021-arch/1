@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from .credentials import CredentialService
 from .game import GAME_MODES, PERSONALITIES
+from .performance import public_profiles
 from .limits import RateLimitError
 from .llm import LLMRouter
 from .persistence import Store
@@ -133,6 +134,8 @@ class ConfigureRequest(CommandRequest):
     pace: Literal["fast", "standard", "slow"] = "standard"
     seats: list[dict[str, Any]] = Field(default_factory=list, max_length=16)
     unique_model_per_ai_seat: bool = Field(default=True, strict=True)
+    ai_performance_profile: Literal["economy", "balanced", "unrestricted", "custom"] | None = None
+    ai_performance_custom: dict[str, Any] | None = None
     mode: (
         Literal[
             "quick6",
@@ -381,6 +384,7 @@ async def health():
         "model_registry": manager().router.model_status(),
         "storage": "sqlite",
         "personalities": PERSONALITIES,
+        "ai_performance_profiles": public_profiles(),
         "game_modes": GAME_MODES,
         "role_catalog": [role.public() for role in ROLE_DEFINITIONS.values()],
     }

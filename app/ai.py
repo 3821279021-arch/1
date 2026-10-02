@@ -16,6 +16,7 @@ from typing import Any
 from .game import PERSONALITIES
 from .llm import LLMRouter
 from .memory import build_memory_from_view, prompt_memory
+from .performance import TRANSPORT_MAX_SPEECH_CHARS, TRANSPORT_MAX_WOLF_CHAT_CHARS
 from .prompt_budget import fit_context
 
 ACTION_ALIASES = {
@@ -181,11 +182,18 @@ class AIOrchestrator:
             }
             for player in view.get("players", [])
         ]
-        recent_view["events"] = deepcopy(view.get("events", [])[-12:])
+        performance = deepcopy(view.get("ai_performance") or {})
+        events = deepcopy(view.get("events", []))
+        event_limit = performance.get("recent_events_limit", 12)
+        recent_view["events"] = events if event_limit is None else events[-int(event_limit):]
         payload = {"player_view": recent_view, "memory": self._factual_memory(view, memory)}
-        total_budget = max(1800, int(os.getenv("AI_PROMPT_TOKEN_LIMIT", "6000")))
+        configured_budget = int(performance.get("prompt_token_limit") or 6000)
+        # An explicitly configured server cap remains a hard operator safety
+        # boundary. Profiles can relax app defaults but cannot bypass it.
+        server_cap = os.getenv("AI_PROMPT_TOKEN_LIMIT")
+        total_budget = max(1800, min(configured_budget, int(server_cap)) if server_cap else configured_budget)
         budget = total_budget - min(reserve_tokens, total_budget // 3)
-        user = fit_context(system, payload, budget)
+        user = fit_context(system, payload, budget, performance.get("memory_compression", "adaptive"))
         pending = view.get("pending_action") or {}
         ctx = {
             "seed": view.get("day", 1) * 193,
@@ -260,7 +268,7 @@ class AIOrchestrator:
     def _valid_action(action: str, candidate: dict[str, Any], ctx: dict[str, Any]) -> bool:
         data = normalize_action(action, candidate)
         if action == "wolf_discuss":
-            return isinstance(data.get("text"), str) and len(data["text"]) <= 300
+            return isinstance(data.get("text"), str) and len(data["text"]) <= TRANSPORT_MAX_WOLF_CHAT_CHARS
         if action != "witch":
             target = _target(data.get("target"))
             return "target" in data and (target is None or type(target) is int and target in ctx["options"])
@@ -432,22 +440,45 @@ class AIOrchestrator:
         style: dict[str, Any] | None = None,
     ):
         system, user, ctx = await asyncio.to_thread(self.context, view, personality, memory, style)
-        limit = 500  # Transport safety limit; personality length is a preference.
-        system += (
-            " 当前任务是公开发言。只输出发言正文，不输出 JSON 或隐藏思维过程。"
-            "通常80到180个中文字；复杂局面可到250到300字。第一轮信息少可自然更短，"
-            "不要机械凑字、重复模板或编造系统事实。表达长度偏好不是硬截断。"
-            "你的身份声称和策略由你自己决定。"
+        performance = view.get("ai_performance") or {}
+        configured_limit = performance.get("speech_character_limit")
+        limit = TRANSPORT_MAX_SPEECH_CHARS if configured_limit is None else min(
+            TRANSPORT_MAX_SPEECH_CHARS, int(configured_limit)
         )
+        system += " 当前任务是公开发言。只输出发言正文，不输出 JSON 或隐藏思维过程。你的身份声称和策略由你自己决定。"
+        if performance.get("force_concise"):
+            system += " 请尽量简洁，只保留会影响当前判断与行动的信息。"
+        elif performance.get("profile") == "balanced":
+            system += " 一般可自然控制篇幅；复杂局面允许充分展开，不要机械凑字或重复模板。"
+        else:
+            system += " 不为节省 token 而省略你认为影响胜负的关键推理、证据或策略。"
+        if not performance.get("force_speech", True):
+            system += " 如果你自主判断沉默更优，只输出 <SKIP_SPEECH>；系统会把它视为主动结束发言而不公开该标记。"
         if view.get("phase") == "last_words":
             system += " 当前为出局遗言；发言不能自动提交投票、技能或夜间动作。"
         ctx["action"] = "speech"
         remaining, emitted = limit, False
         reason = None
+        allow_silence = not performance.get("force_speech", True)
+        sentinel = "<SKIP_SPEECH>"
+        prefix = ""
+        skipped = False
         try:
             async for chunk in self.router.speech_stream(provider, system, user, ctx):
                 if not isinstance(chunk, str):
                     reason = "invalid_stream_chunk"
+                    continue
+                if allow_silence and not emitted and not skipped:
+                    prefix += chunk
+                    stripped = prefix.strip()
+                    if sentinel.startswith(stripped) and len(stripped) < len(sentinel):
+                        continue
+                    if stripped == sentinel:
+                        skipped = True
+                        prefix = ""
+                        continue
+                    chunk, prefix = prefix, ""
+                if skipped:
                     continue
                 output = chunk[:remaining]
                 if output:
@@ -458,11 +489,21 @@ class AIOrchestrator:
                 # remain accurate even when public text reaches its length cap.
         except Exception as exc:
             reason = type(exc).__name__
-        if not emitted:
+        if prefix and not skipped and remaining > 0:
+            output = prefix[:remaining]
+            if output:
+                yield output
+                emitted = emitted or bool(output.strip())
+        if not emitted and not skipped and performance.get("force_speech", True):
             yield "本轮跳过发言。"
             self.speech_repairs["safe_replacements"] += 1
             reason = reason or "empty_speech"
-        self._record(view, "speech", source="rule_fallback" if reason else "model", reason=reason)
+        self._record(
+            view,
+            "speech",
+            source="rule_fallback" if reason and not skipped else "model",
+            reason="strategic_silence" if skipped else reason,
+        )
 
     async def pet_reply(
         self, view: dict[str, Any], pet: dict[str, Any], question: str, long_term: dict[str, Any]
@@ -517,9 +558,14 @@ class AIOrchestrator:
         style: dict[str, Any] | None = None,
     ) -> str:
         system, user, ctx = await asyncio.to_thread(self.context, view, personality, memory, style)
+        performance = view.get("ai_performance") or {}
+        configured_limit = performance.get("wolf_discussion_character_limit")
+        discussion_limit = TRANSPORT_MAX_WOLF_CHAT_CHARS if configured_limit is None else min(
+            TRANSPORT_MAX_WOLF_CHAT_CHARS, int(configured_limit)
+        )
         system += (
             " 当前是仅合法狼队成员可见的合作讨论，战术、站边、欺骗和目标由你们自主决定。"
-            '本消息只是队内交流，最终夜杀须单独提交。只返回 JSON {"speech":"队内发言"}，最多300字。'
+            f'本消息只是队内交流，最终夜杀须单独提交。只返回 JSON {{"speech":"队内发言"}}，最多{discussion_limit}字。'
         )
         ctx["action"] = "wolf_discussion"
         wolf_ids = {view["self"]["id"], *(p["id"] for p in view.get("wolf_teammates", []))}
@@ -539,4 +585,4 @@ class AIOrchestrator:
             )
             return "模型暂不可用，本轮跳过讨论。"
         self._record(view, "wolf_discussion", source="model", result=result)
-        return text[:300] if isinstance(text, str) and text.strip() else "本轮跳过讨论。"
+        return text[:discussion_limit] if isinstance(text, str) and text.strip() else "本轮跳过讨论。"

@@ -15,6 +15,7 @@ from .ai import AIOrchestrator, memory_from
 from .credentials import validate_model_options
 from .game import PERSONALITIES, WerewolfGame
 from .limits import Limits
+from .performance import profile_model_parameters, resolve_performance
 from .llm import LLMRouter
 from .persistence import Store
 from .rules import RuleEngine
@@ -497,6 +498,8 @@ class RoomManager:
                     roles=payload.get("roles"),
                     board_policy=payload.get("board_policy"),
                     random_role_pool=payload.get("random_role_pool"),
+                    ai_performance_profile=payload.get("ai_performance_profile"),
+                    ai_performance_custom=payload.get("ai_performance_custom"),
                 )
             elif command == "seat":
                 room.engine.change_seat(owner_id, payload.get("seat"))
@@ -721,14 +724,22 @@ class RoomManager:
                     )
                 else:
                     provider, personality, style, agent_id = p.model_key or p.provider, p.personality, {}, p.agent_id
-                route_metadata = {"model_parameters": getattr(p, "model_options", {})}
+                performance = resolve_performance(
+                    room.game.ai_performance_profile, room.game.ai_performance_custom
+                )
+                model_parameters = profile_model_parameters(performance, getattr(p, "model_options", {}))
+                route_metadata = {
+                    "model_parameters": model_parameters,
+                    "performance_profile": performance["profile"],
+                }
                 if getattr(p, "credential_id", None):
                     route_metadata = {
                         "credential_id": p.credential_id,
                         "credential_owner_id": p.credential_owner_id,
                         "credential_scope_id": room.game.room_id,
                         "model_id": p.model_id or p.model,
-                        "model_parameters": getattr(p, "model_options", {}),
+                        "model_parameters": model_parameters,
+                        "performance_profile": performance["profile"],
                     }
                     try:
                         credential = self.router.credentials.get(
@@ -800,7 +811,7 @@ class RoomManager:
                             return
                         payload = {
                             "action": "speech",
-                            "speech": room.game.current_speech or "我先听后续发言。",
+                            "speech": room.game.current_speech,
                             "game_id": view["game_id"],
                             "turn_sequence": sequence,
                             "turn_id": view["turn_id"],

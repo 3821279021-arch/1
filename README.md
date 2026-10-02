@@ -1,4 +1,4 @@
-# 月下狼人杀 · AI 竞技场 V3.2.0
+# 月下狼人杀 · AI 竞技场 V3.3.0
 
 [English](README_EN.md) · [许可证待所有者选择](LICENSE-DECISION.md) · [Benchmark 使用](docs/benchmark.md)
 
@@ -24,9 +24,11 @@ python -m tools.arena run --config experiments/qwen-vs-openai.json --games 100 -
 统计显示 N、Wilson 95% CI、分阵营/角色/座位胜率、token、成本、延迟和 fallback；未知成本保留为空。
 同局玩家结果存在相关性，区间用于描述样本，不作为显著性排名。Mock 只验证工程流程。
 
-V3.2.0 按第 4 包升级：无人房间暂停与回收、本地氛围音频、阅读缓冲、模型收藏与阵容、五项导航、16 个完整角色和约束随机板。Tournament & Evaluation 顺延到 V3.3。
+V3.2.0 完成无人房间暂停与回收、本地氛围音频、阅读缓冲、模型收藏与阵容、五项导航、16 个完整角色和约束随机板。
 
-当前文档：[V3.2 使用](docs/V3.2-PLAY-GUIDE.md)、[V3.2 API](docs/API-V3.2.md)、[V3.2 验收](docs/V3.2-ACCEPTANCE.md)、[复现边界](docs/reproducibility.md)、[Benchmark](docs/benchmark.md)、[V3.1 API](docs/API-V3.1.md)、[开源对照](docs/V3.1-COMPARISON.md)、[验收证据](docs/V3.1-ACCEPTANCE.md)、[贡献指南](CONTRIBUTING.md)、[开发](docs/development.md)、[安全](SECURITY.md)、[更新记录](CHANGELOG.md)、[路线图](ROADMAP.md)。旧版需求和验收证据仍保留在 docs 中。
+V3.3.0 新增 **AI Performance Profiles**：Economy / Balanced / Unrestricted / Custom。最高性能模式尽量解除上下文、输出长度、强制发言与简洁化等软限制，同时保留身份隔离、合法动作校验和服务器预算硬边界；Arena manifest 会记录实际性能配置。Tournament & Evaluation 的完整联赛/统计升级继续作为后续工作。
+
+当前文档：[AI 性能模式](docs/AI-PERFORMANCE-PROFILES.md)、[V3.2 使用](docs/V3.2-PLAY-GUIDE.md)、[V3.2 API](docs/API-V3.2.md)、[V3.2 验收](docs/V3.2-ACCEPTANCE.md)、[复现边界](docs/reproducibility.md)、[Benchmark](docs/benchmark.md)、[V3.1 API](docs/API-V3.1.md)、[开源对照](docs/V3.1-COMPARISON.md)、[验收证据](docs/V3.1-ACCEPTANCE.md)、[贡献指南](CONTRIBUTING.md)、[开发](docs/development.md)、[安全](SECURITY.md)、[更新记录](CHANGELOG.md)、[路线图](ROADMAP.md)。旧版需求和验收证据仍保留在 docs 中。
 
 项目许可证尚待所有者明确选择，当前 LICENSE 不代表已经授予 MIT/Apache-2.0 许可。
 第三方词表继续保留原许可证；见 [第三方声明](THIRD-PARTY-NOTICES.md)。研究 trace 含私有身份/动作，分享前应检查。研究导出只允许原房主下载已结束对局，公开回放权限保持原语义，不保存供应商隐藏思维过程。
@@ -139,3 +141,7 @@ V3 新验收覆盖规则、AI 自主性、凭据隔离、动态目录、多人 H
 - `docs/v3-requirements/`：原始 V3 需求；旧版本文档保留历史说明。
 
 本次验证记录及未实测项目见 `docs/V3-ACCEPTANCE.md`，需求映射见 `docs/V3-TRACEABILITY.md`。
+
+## AI 性能模式（V3.3）
+
+房主可在“分配 AI 模型”中选择 **Economy / Balanced / Unrestricted / Custom**。`Unrestricted` 用于尽量减少项目对模型能力的软限制；`Custom` 可逐项控制上下文、输出、推理和发言策略。硬身份边界、合法动作校验与服务器预算保护始终保留。详见 `docs/AI-PERFORMANCE-PROFILES.md`。

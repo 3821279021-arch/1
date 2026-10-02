@@ -99,15 +99,15 @@ def validate_model_options(options: dict | None) -> dict:
     if "seed" in result and (type(result["seed"]) is not int or not 0 <= result["seed"] < 2**31):
         raise CredentialError("seed 必须是非负 32 位整数")
     if "thinking_budget" in result and (
-        type(result["thinking_budget"]) is not int or not 0 <= result["thinking_budget"] <= 32768
+        type(result["thinking_budget"]) is not int or not 0 <= result["thinking_budget"] <= 131072
     ):
-        raise CredentialError("thinking_budget 必须介于 0 和 32768")
+        raise CredentialError("thinking_budget 必须介于 0 和 131072")
     if "enable_thinking" in result and type(result["enable_thinking"]) is not bool:
         raise CredentialError("enable_thinking 必须为布尔值")
     if "max_output_tokens" in result and (
-        type(result["max_output_tokens"]) is not int or not 32 <= result["max_output_tokens"] <= 16384
+        type(result["max_output_tokens"]) is not int or not 32 <= result["max_output_tokens"] <= 65536
     ):
-        raise CredentialError("max_output_tokens 必须介于 32 和 16384")
+        raise CredentialError("max_output_tokens 必须介于 32 和 65536")
     return result
 
 

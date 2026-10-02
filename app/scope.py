@@ -9,6 +9,7 @@ from typing import Any
 
 from .boards import framework
 from .game import PHASE_NAMES, ROLE_NAMES, WerewolfGame
+from .performance import resolve_performance
 from .roles import GAME_MODES, ROLE_DEFINITIONS
 from .rules import RuleEngine
 
@@ -62,6 +63,8 @@ class InformationScope:
             "locked": g.locked,
             "has_password": bool(g.password_hash),
             "unique_model_per_ai_seat": g.unique_model_per_ai_seat,
+            "ai_performance_profile": g.ai_performance_profile,
+            "ai_performance": resolve_performance(g.ai_performance_profile, g.ai_performance_custom),
             "day": g.day,
             "phase": "night" if random_board and g.phase.startswith("night_") else g.phase,
             "phase_name": "夜间行动" if random_board and g.phase.startswith("night_") else PHASE_NAMES[g.phase],
@@ -156,11 +159,16 @@ class InformationScope:
     @staticmethod
     def ai_view(g: WerewolfGame, pid: int) -> dict[str, Any]:
         view = InformationScope.player_view(g, pid)
-        # Bound context and costs; the full public history stays available in the UI.
-        view["events"] = view["events"][-12:]
-        view["self"]["private_notes"] = view["self"]["private_notes"][-20:]
-        if "wolf_chat" in view:
-            view["wolf_chat"] = view["wolf_chat"][-20:]
+        performance = view["ai_performance"]
+        # Soft context shaping is profile-controlled. InformationScope still owns
+        # the hard visibility boundary, regardless of profile.
+        for key, limit_key in (("events", "recent_events_limit"), ("wolf_chat", "wolf_chat_limit")):
+            limit = performance.get(limit_key)
+            if key in view and limit is not None:
+                view[key] = view[key][-int(limit):]
+        note_limit = performance.get("private_notes_limit")
+        if note_limit is not None:
+            view["self"]["private_notes"] = view["self"]["private_notes"][-int(note_limit):]
         return view
 
     @staticmethod
