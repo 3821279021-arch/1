@@ -185,7 +185,7 @@ class AIOrchestrator:
         performance = deepcopy(view.get("ai_performance") or {})
         events = deepcopy(view.get("events", []))
         event_limit = performance.get("recent_events_limit", 12)
-        recent_view["events"] = events if event_limit is None else events[-int(event_limit):]
+        recent_view["events"] = events if event_limit is None else events[-int(event_limit) :]
         payload = {"player_view": recent_view, "memory": self._factual_memory(view, memory)}
         configured_budget = int(performance.get("prompt_token_limit") or 6000)
         # An explicitly configured server cap remains a hard operator safety
@@ -442,8 +442,10 @@ class AIOrchestrator:
         system, user, ctx = await asyncio.to_thread(self.context, view, personality, memory, style)
         performance = view.get("ai_performance") or {}
         configured_limit = performance.get("speech_character_limit")
-        limit = TRANSPORT_MAX_SPEECH_CHARS if configured_limit is None else min(
-            TRANSPORT_MAX_SPEECH_CHARS, int(configured_limit)
+        limit = (
+            TRANSPORT_MAX_SPEECH_CHARS
+            if configured_limit is None
+            else min(TRANSPORT_MAX_SPEECH_CHARS, int(configured_limit))
         )
         system += " 当前任务是公开发言。只输出发言正文，不输出 JSON 或隐藏思维过程。你的身份声称和策略由你自己决定。"
         if performance.get("force_concise"):
@@ -560,8 +562,10 @@ class AIOrchestrator:
         system, user, ctx = await asyncio.to_thread(self.context, view, personality, memory, style)
         performance = view.get("ai_performance") or {}
         configured_limit = performance.get("wolf_discussion_character_limit")
-        discussion_limit = TRANSPORT_MAX_WOLF_CHAT_CHARS if configured_limit is None else min(
-            TRANSPORT_MAX_WOLF_CHAT_CHARS, int(configured_limit)
+        discussion_limit = (
+            TRANSPORT_MAX_WOLF_CHAT_CHARS
+            if configured_limit is None
+            else min(TRANSPORT_MAX_WOLF_CHAT_CHARS, int(configured_limit))
         )
         system += (
             " 当前是仅合法狼队成员可见的合作讨论，战术、站边、欺骗和目标由你们自主决定。"
