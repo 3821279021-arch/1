@@ -165,10 +165,10 @@ class InformationScope:
         for key, limit_key in (("events", "recent_events_limit"), ("wolf_chat", "wolf_chat_limit")):
             limit = performance.get(limit_key)
             if key in view and limit is not None:
-                view[key] = view[key][-int(limit):]
+                view[key] = view[key][-int(limit) :]
         note_limit = performance.get("private_notes_limit")
         if note_limit is not None:
-            view["self"]["private_notes"] = view["self"]["private_notes"][-int(note_limit):]
+            view["self"]["private_notes"] = view["self"]["private_notes"][-int(note_limit) :]
         return view
 
     @staticmethod
