@@ -133,7 +133,11 @@ def validate_performance(profile: str | None, custom: dict[str, Any] | None = No
             raise ValueError("reasoning_effort 无效")
     if "thinking_budget" in value:
         value["thinking_budget"] = _optional_int(value["thinking_budget"], "thinking_budget", 0, 131072)
-    if "enable_thinking" in value and value["enable_thinking"] is not None and type(value["enable_thinking"]) is not bool:
+    if (
+        "enable_thinking" in value
+        and value["enable_thinking"] is not None
+        and type(value["enable_thinking"]) is not bool
+    ):
         raise ValueError("enable_thinking 必须为布尔值或 null")
     for key, maximum in (
         ("speech_character_limit", TRANSPORT_MAX_SPEECH_CHARS),
