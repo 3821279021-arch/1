@@ -1,0 +1,16 @@
+{
+  "name": "capability-unrestricted",
+  "games": 20,
+  "seed": 20261002,
+  "seat_policy": "rotate",
+  "paired_seeds": true,
+  "ai_performance_profile": "unrestricted",
+  "ai_performance_custom": {},
+  "ruleset": {"mode": "standard9"},
+  "agents": [
+    {"id":"model_a","provider":"openai","model":"gpt-4.1-mini","credential_env":"OPENAI_API_KEY","parameters":{}},
+    {"id":"model_b","provider":"dashscope","model":"qwen-plus","credential_env":"DASHSCOPE_API_KEY","parameters":{}}
+  ],
+  "lineups": [{"id":"capability","agents":["model_a","model_b"]}],
+  "limits": {"max_concurrency":1,"max_retries":1,"max_total_tokens":5000000,"game_timeout_seconds":1200,"fail_fast":true}
+}
