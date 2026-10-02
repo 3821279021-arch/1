@@ -22,7 +22,7 @@ jobs:
             echo "Patch parts already cleaned."
             exit 0
           fi
-          cat .upgrade/v33/part*.b64 | base64 -d > /tmp/v33.patch
+          cat .upgrade/v33/part*.b64 | tr -d " \\t\\r\\n" | base64 -d > /tmp/v33.patch
           git apply --check /tmp/v33.patch
           git apply /tmp/v33.patch
           rm -rf .upgrade/v33
