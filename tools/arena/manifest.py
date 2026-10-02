@@ -60,9 +60,7 @@ def make_manifest(config: dict[str, Any], experiment_id: str) -> dict[str, Any]:
             "role_policy": config["role_policy"],
             "paired_seeds": config["paired_seeds"],
             "ai_performance_profile": config["ai_performance_profile"],
-            "ai_performance": resolve_performance(
-                config["ai_performance_profile"], config["ai_performance_custom"]
-            ),
+            "ai_performance": resolve_performance(config["ai_performance_profile"], config["ai_performance_custom"]),
             "lineups": config["lineups"],
             "agents": agents,
             "prompt_version": PROMPT_VERSION,
