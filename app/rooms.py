@@ -15,8 +15,8 @@ from .ai import AIOrchestrator, memory_from
 from .credentials import validate_model_options
 from .game import PERSONALITIES, WerewolfGame
 from .limits import Limits
-from .performance import profile_model_parameters, resolve_performance
 from .llm import LLMRouter
+from .performance import profile_model_parameters, resolve_performance
 from .persistence import Store
 from .rules import RuleEngine
 from .scope import InformationScope
