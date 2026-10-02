@@ -16,9 +16,9 @@ from pydantic import BaseModel, Field
 
 from .credentials import CredentialService
 from .game import GAME_MODES, PERSONALITIES
-from .performance import public_profiles
 from .limits import RateLimitError
 from .llm import LLMRouter
+from .performance import public_profiles
 from .persistence import Store
 from .roles import ROLE_DEFINITIONS
 from .rooms import RoomManager
