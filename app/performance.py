@@ -62,6 +62,8 @@ PROFILES: dict[str, dict[str, Any]] = {
         "wolf_chat_limit": None,
         "memory_compression": "minimal",
         "max_output_tokens": 16384,
+        # Provider-specific reasoning knobs are intentionally left untouched.
+        # Custom mode can force high/xhigh when the chosen model supports it.
         "reasoning_effort": None,
         "thinking_budget": None,
         "enable_thinking": None,
@@ -76,11 +78,22 @@ CUSTOM_DEFAULTS = deepcopy(PROFILES["balanced"])
 CUSTOM_DEFAULTS.update(label="Custom")
 
 CUSTOM_FIELDS = {
-    "prompt_token_limit", "history_mode", "recent_events_limit", "private_notes_limit",
-    "wolf_chat_limit", "memory_compression", "max_output_tokens", "reasoning_effort",
-    "thinking_budget", "enable_thinking", "speech_character_limit",
-    "wolf_discussion_character_limit", "force_concise", "force_speech",
+    "prompt_token_limit",
+    "history_mode",
+    "recent_events_limit",
+    "private_notes_limit",
+    "wolf_chat_limit",
+    "memory_compression",
+    "max_output_tokens",
+    "reasoning_effort",
+    "thinking_budget",
+    "enable_thinking",
+    "speech_character_limit",
+    "wolf_discussion_character_limit",
+    "force_concise",
+    "force_speech",
 }
+
 
 def _optional_int(value: Any, name: str, minimum: int, maximum: int) -> int | None:
     if value is None:
@@ -88,6 +101,7 @@ def _optional_int(value: Any, name: str, minimum: int, maximum: int) -> int | No
     if type(value) is not int or not minimum <= value <= maximum:
         raise ValueError(f"{name} 必须介于 {minimum} 和 {maximum}，或设为 null")
     return value
+
 
 def validate_performance(profile: str | None, custom: dict[str, Any] | None = None) -> tuple[str, dict[str, Any]]:
     profile = profile or "balanced"
@@ -99,6 +113,7 @@ def validate_performance(profile: str | None, custom: dict[str, Any] | None = No
         raise ValueError("AI 自定义性能参数包含未知字段")
     if profile != "custom":
         return profile, {}
+
     value = deepcopy(custom)
     if "prompt_token_limit" in value:
         raw = value["prompt_token_limit"]
@@ -120,7 +135,10 @@ def validate_performance(profile: str | None, custom: dict[str, Any] | None = No
         value["thinking_budget"] = _optional_int(value["thinking_budget"], "thinking_budget", 0, 131072)
     if "enable_thinking" in value and value["enable_thinking"] is not None and type(value["enable_thinking"]) is not bool:
         raise ValueError("enable_thinking 必须为布尔值或 null")
-    for key, maximum in (("speech_character_limit", TRANSPORT_MAX_SPEECH_CHARS), ("wolf_discussion_character_limit", TRANSPORT_MAX_WOLF_CHAT_CHARS)):
+    for key, maximum in (
+        ("speech_character_limit", TRANSPORT_MAX_SPEECH_CHARS),
+        ("wolf_discussion_character_limit", TRANSPORT_MAX_WOLF_CHAT_CHARS),
+    ):
         if key in value:
             value[key] = _optional_int(value[key], key, 1, maximum)
     for key in ("force_concise", "force_speech"):
@@ -128,17 +146,20 @@ def validate_performance(profile: str | None, custom: dict[str, Any] | None = No
             raise ValueError(f"{key} 必须为布尔值")
     return profile, value
 
+
 def resolve_performance(profile: str | None, custom: dict[str, Any] | None = None) -> dict[str, Any]:
     profile, custom = validate_performance(profile, custom)
     base = deepcopy(CUSTOM_DEFAULTS if profile == "custom" else PROFILES[profile])
     if profile == "custom":
         base.update(custom)
     base["profile"] = profile
+    # Full history is semantically stronger than a stale numeric slice.
     if base.get("history_mode") == "full":
         base["recent_events_limit"] = None
         base["private_notes_limit"] = None
         base["wolf_chat_limit"] = None
     return base
+
 
 def profile_model_parameters(performance: dict[str, Any], overrides: dict[str, Any] | None = None) -> dict[str, Any]:
     """Translate a profile into provider parameters, with explicit seat overrides winning."""
@@ -149,6 +170,7 @@ def profile_model_parameters(performance: dict[str, Any], overrides: dict[str, A
             result[key] = value
     result.update(overrides or {})
     return result
+
 
 def public_profiles() -> dict[str, dict[str, Any]]:
     return {key: deepcopy(value) for key, value in PROFILES.items()}
