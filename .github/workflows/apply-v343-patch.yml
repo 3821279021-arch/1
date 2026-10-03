@@ -1,0 +1,48 @@
+name: Apply AI Werewolf v3.4.3 patch
+
+on:
+  push:
+    branches:
+      - v343-stage-final
+    paths:
+      - '.github/workflows/apply-v343-patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v343-stage-final
+          fetch-depth: 0
+
+      - name: Rebuild and verify patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .v343patch/part* | base64 -d > /tmp/v343.patch.gz
+          echo "26e72e29bd39810259b9b3263d7f9b94aa028493831d418ed08b8fd936e05343  /tmp/v343.patch.gz" | sha256sum -c -
+          gzip -dc /tmp/v343.patch.gz > /tmp/v343.patch
+          git apply --check /tmp/v343.patch
+          git apply /tmp/v343.patch
+
+          mkdir -p app/static/model-avatars
+          for n in anthropic deepseek doubao gemini grok hunyuan kimi openai qwen wenxin zhipu; do
+            cp app/static/icon-512.png "app/static/model-avatars/$n.png"
+          done
+
+          rm -rf .v343patch .upgrade .v343push2
+          rm -f .github/workflows/export-old-source.yml
+          rm -f .github/workflows/apply-v343-patch.yml
+
+          python -m compileall -q app
+          test "$(tr -d '\r\n' < VERSION)" = "3.4.3"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Upgrade AI Werewolf to v3.4.3"
+          git push origin HEAD:v343-stage-final
