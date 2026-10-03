@@ -26,8 +26,9 @@ jobs:
         run: |
           set -euo pipefail
           test -d .upgrade
-          mapfile -t parts < <(find .upgrade -maxdepth 1 -type f -name 'payload.part*' | sort -V)
+          mapfile -t parts < <(find .upgrade -maxdepth 1 -type f -name 'payload.part*' | sort)
           test "${#parts[@]}" -gt 0
+          printf '%s\n' "${parts[@]}"
           cat "${parts[@]}" > /tmp/v343.b64
           base64 -d /tmp/v343.b64 > /tmp/v343.tar.gz
           gzip -t /tmp/v343.tar.gz
