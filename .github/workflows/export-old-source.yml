@@ -1,0 +1,23 @@
+name: Export old source
+on:
+  push:
+    branches: [upgrade-v3.4.3]
+    paths: [.github/workflows/export-old-source.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: upgrade-v3.4.3
+      - name: Remove temporary upgrade files
+        run: rm -rf .git .upgrade .v343push2 .github/workflows/apply-v343-runtime.yml .github/workflows/export-old-source.yml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: old-source
+          path: .
+          include-hidden-files: true
+          retention-days: 1
