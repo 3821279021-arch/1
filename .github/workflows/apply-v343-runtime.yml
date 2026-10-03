@@ -1,0 +1,61 @@
+name: Apply V3.4.3 runtime
+
+on:
+  push:
+    branches:
+      - upgrade-v3.4.3
+    paths:
+      - .github/workflows/apply-v343-runtime.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout upgrade branch
+        uses: actions/checkout@v4
+        with:
+          ref: upgrade-v3.4.3
+          fetch-depth: 0
+
+      - name: Reassemble and validate V3.4.3 payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d .upgrade
+          mapfile -t parts < <(find .upgrade -maxdepth 1 -type f -name 'payload.part*' | sort -V)
+          test "${#parts[@]}" -gt 0
+          cat "${parts[@]}" > /tmp/v343.b64
+          base64 -d /tmp/v343.b64 > /tmp/v343.tar.gz
+          gzip -t /tmp/v343.tar.gz
+          mkdir -p /tmp/v343
+          tar -xzf /tmp/v343.tar.gz -C /tmp/v343
+
+          SRC=/tmp/v343
+          if [ ! -f "$SRC/VERSION" ]; then
+            candidate=$(find /tmp/v343 -maxdepth 3 -type f -name VERSION -print -quit || true)
+            test -n "$candidate"
+            SRC=$(dirname "$candidate")
+          fi
+
+          test "$(tr -d '\r\n' < "$SRC/VERSION")" = "3.4.3"
+          test -f "$SRC/app/main.py"
+          echo "Validated payload root: $SRC"
+
+          cp -a "$SRC"/. ./
+          python -m compileall -q app
+
+      - name: Commit upgraded runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .upgrade .v343push2
+          rm -f .github/workflows/apply-v343-runtime.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Upgrade AI Werewolf to v3.4.3"
+          git push origin HEAD:upgrade-v3.4.3
